@@ -83,8 +83,6 @@ export default class SpectrumAudio {
       return
     }
 
-    // this.decoder = createFlacDecoder()
-
     if (settings.audio_compression === 'flac') {
       this.decoder = createFlacDecoder()
     } else if (settings.audio_compression === 'opus') {

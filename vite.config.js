@@ -22,7 +22,7 @@ export default defineConfig({
         target: 'http://localhost:9002',
         ws: true
       },
-      '/control': {
+      '/events': {
         target: 'http://localhost:9002',
         ws: true
       },
