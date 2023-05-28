@@ -1,12 +1,11 @@
-import { createFlacDecoder, createOpusDecoder, createResampler, LiquidDSP } from './lib/wrappers'
-import AudioProcessor from './lib/AudioProcessor'
+import { createDecoder, firdes_kaiser_lowpass } from './lib/wrappers'
 
 import createWindow from 'live-moving-average'
 
-import { MinimalAudioContext, ConvolverNode, AudioContext, IIRFilterNode, GainNode, AudioBuffer, AudioBufferSourceNode } from 'standardized-audio-context'
+import { MinimalAudioContext, ConvolverNode, IIRFilterNode, GainNode, AudioBuffer, AudioBufferSourceNode } from 'standardized-audio-context'
 
 export default class SpectrumAudio {
-  constructor (endpoint) {
+  constructor(endpoint) {
     this.endpoint = endpoint
 
     this.playAmount = 0
@@ -40,16 +39,12 @@ export default class SpectrumAudio {
     this.n1 = 10
     this.var = 10
     this.highThres = 1
-
-    this.lastdebug = 0
   }
 
-  async init () {
+  async init() {
     if (this.promise) {
       return this.promise
     }
-
-    this.audioProcessor = new AudioProcessor()
 
     this.promise = new Promise((resolve, reject) => {
       this.resolvePromise = resolve
@@ -64,15 +59,12 @@ export default class SpectrumAudio {
     return this.promise
   }
 
-  stop () {
+  stop() {
     this.audioSocket.close()
-    this.decoder.destroy()
-    if (this.resampler) {
-      this.resampler.destroy()
-    }
+    this.decoder.free()
   }
 
-  initAudio (settings) {
+  initAudio(settings) {
     const sampleRate = this.audioOutputSps
     try {
       this.audioCtx = new MinimalAudioContext({
@@ -83,15 +75,13 @@ export default class SpectrumAudio {
       return
     }
 
-    if (settings.audio_compression === 'flac') {
-      this.decoder = createFlacDecoder()
-    } else if (settings.audio_compression === 'opus') {
-      this.decoder = createOpusDecoder(Math.min(this.trueAudioSps, 48000))
-    }
-
     this.audioStartTime = this.audioCtx.currentTime
     this.playTime = this.audioCtx.currentTime + 0.1
     this.playStartTime = this.audioCtx.currentTime
+
+    this.decoder = createDecoder(settings.audio_compression, this.audioMaxSps, this.trueAudioSps, this.audioOutputSps)
+    
+    // inputNode -> fmDeemphNode -> convolverNode -> gainNode -> audioCtx.destination
 
     this.gainNode = new GainNode(this.audioCtx)
     this.setGain(10)
@@ -105,33 +95,27 @@ export default class SpectrumAudio {
 
     // this.wbfmStereo = new LiquidDSP.WBFMStereo(this.trueAudioSps)
 
-    if (this.trueAudioSps > 96000) {
-      createResampler(this.trueAudioSps, 96000, 1).then((src) => {
-        this.resampler = src
-        this.resolvePromise(settings)
-      })
-    } else {
-      this.resolvePromise(settings)
-    }
+    this.resolvePromise(settings)
   }
 
-  setFIRFilter (fir) {
+  setFIRFilter(fir) {
     const firAudioBuffer = new AudioBuffer({ length: fir.length, numberOfChannels: 1, sampleRate: this.audioOutputSps })
     firAudioBuffer.copyToChannel(fir, 0, 0)
     this.convolverNode.buffer = firAudioBuffer
   }
 
-  setLowpass (lowpass) {
+  setLowpass(lowpass) {
     const sampleRate = this.audioOutputSps
     // Bypass the FIR filter if the sample rate is low enough
     if (lowpass >= sampleRate / 2) {
-      lowpass = sampleRate / 2
+      this.setFIRFilter(Float32Array.of(1))
+      return
     }
-    const fir = LiquidDSP.FirDesKaiser(1000 / sampleRate, lowpass / sampleRate, 60, 0)
+    const fir = firdes_kaiser_lowpass(lowpass / sampleRate, 1000 / sampleRate, 0.001)
     this.setFIRFilter(fir)
   }
 
-  setFmDeemph (tau) {
+  setFmDeemph(tau) {
     if (tau === 0) {
       this.audioInputNode = this.convolverNode
       return
@@ -161,7 +145,7 @@ export default class SpectrumAudio {
     this.audioInputNode = this.fmDeemphNode
   }
 
-  socketMessageInitial (event) {
+  socketMessageInitial(event) {
     // first message gives the parameters in json
     const settings = JSON.parse(event.data)
     this.settings = settings
@@ -189,13 +173,17 @@ export default class SpectrumAudio {
     console.log('Audio Samplerate: ', this.trueAudioSps)
   }
 
-  socketMessage (event) {
+  socketMessage(event) {
     if (event.data instanceof ArrayBuffer) {
-      const floats = new Float64Array(event.data.slice(0, 3 * 8))
-      // const ints = new Int32Array(event.data.slice(0, 3 * 8))
-      const bytes = new Uint8Array(event.data)
-
-      const receivedPower = floats[2]
+      /*
+          struct {
+            uint64_t frame_num;
+            uint32_t l, r;
+            double m, pwr;
+          } header;
+      */
+      const header = new DataView(event.data)
+      const receivedPower = header.getFloat64(8 + 4 * 2 + 8, true)
       this.power = 0.5 * this.power + 0.5 * receivedPower || 1
       const dBpower = 20 * Math.log10(Math.sqrt(this.power) / 2)
       this.dBPower = dBpower
@@ -205,30 +193,21 @@ export default class SpectrumAudio {
         this.squelchMute = false
       }
 
-      if (!this.audioCtx) return
-
-      const encodedArray = bytes.subarray(3 * 8)
-      this.decode(encodedArray)
+      const packet = new Uint8Array(event.data.slice(4 * 8))
+      this.decode(packet)
     }
   }
 
-  decode (encoded) {
-    let sample = new Int16Array()
-    try {
-      sample = this.decoder.decode(encoded)
-    } catch (err) {
+  decode(encoded) {
+    // Audio not available
+    if (!this.audioCtx) {
       return
     }
-    // If the decoder does not output samples, return immediately
-    if (sample.length === 0) {
+    let pcmArray = this.decoder.decode(encoded)
+    // More samples needed
+    if (pcmArray.length === 0) {
       return
     }
-
-    // Scale the array
-    let pcmArray = new Float32Array(sample)
-    pcmArray = pcmArray.map(x => x / 65536)
-
-    // Resample
 
     this.intervals = this.intervals || createWindow(10000, 0)
     this.lens = this.lens || createWindow(10000, 0)
@@ -275,15 +254,11 @@ export default class SpectrumAudio {
     if (this.signalDecoder) {
       this.signalDecoder.decode(pcmArray)
     }
-    if (this.resampler) {
-      pcmArray = this.resampler.resample(pcmArray)
-    }
-    pcmArray = this.audioProcessor.process(pcmArray)
 
     this.playAudio(pcmArray)
   }
 
-  updateAudioParams () {
+  updateAudioParams() {
     this.audioSocket.send(JSON.stringify({
       cmd: 'window',
       l: this.audioL,
@@ -292,7 +267,7 @@ export default class SpectrumAudio {
     }))
   }
 
-  setAudioDemodulation (demodulation) {
+  setAudioDemodulation(demodulation) {
     this.demodulation = demodulation
     this.audioSocket.send(JSON.stringify({
       cmd: 'demodulation',
@@ -300,18 +275,18 @@ export default class SpectrumAudio {
     }))
   }
 
-  setAudioRange (audioL, audioM, audioR) {
+  setAudioRange(audioL, audioM, audioR) {
     this.audioL = audioL
     this.audioM = audioM
     this.audioR = audioR
     this.updateAudioParams()
   }
 
-  getAudioRange () {
+  getAudioRange() {
     return [this.audioL, this.audioM, this.audioR]
   }
 
-  setAudioOptions (options) {
+  setAudioOptions(options) {
     this.audioOptions = options
     this.audioSocket.send(JSON.stringify({
       cmd: 'options',
@@ -319,12 +294,12 @@ export default class SpectrumAudio {
     }))
   }
 
-  setGain (gain) {
+  setGain(gain) {
     this.gain = gain
     this.gainNode.gain.value = gain
   }
 
-  setMute (mute) {
+  setMute(mute) {
     if (mute === this.mute) {
       return
     }
@@ -335,34 +310,34 @@ export default class SpectrumAudio {
     }))
   }
 
-  setSquelch (squelch) {
+  setSquelch(squelch) {
     this.squelch = squelch
   }
 
-  setSquelchThreshold (squelchThreshold) {
+  setSquelchThreshold(squelchThreshold) {
     this.squelchThreshold = squelchThreshold
   }
 
-  getPowerDb () {
+  getPowerDb() {
     return this.dBPower
   }
 
-  setUserID (userID) {
+  setUserID(userID) {
     this.audioSocket.send(JSON.stringify({
       cmd: 'userid',
       userid: userID
     }))
   }
 
-  setSignalDecoder (decoder) {
+  setSignalDecoder(decoder) {
     this.signalDecoder = decoder
   }
 
-  getSignalDecoder () {
+  getSignalDecoder() {
     return this.signalDecoder
   }
 
-  playAudio (pcmArray) {
+  playAudio(pcmArray) {
     if (this.mute || (this.squelchMute && this.squelch)) {
       return
     }
@@ -382,7 +357,7 @@ export default class SpectrumAudio {
     }
   }
 
-  playPCM (buffer, playTime, sampleRate, scale) {
+  playPCM(buffer, playTime, sampleRate, scale) {
     // Wait for the audio to be initialised
     if (!this.audioInputNode) {
       return

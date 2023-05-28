@@ -7,7 +7,7 @@
     import builtinShortwave from '../assets/shortwavestations.json'
     import builtinAmateur from '../assets/amateurfrequencies.json'
     const dispatch = createEventDispatcher()
-
+    
     const frequencyList = []
     function insertAll (frequencies) {
       for (const frequency of frequencies) {
@@ -25,8 +25,8 @@
       frequencyList.sort(frequencyListComparator)
     }
     
-    insertAll(builtinShortwave)
-    insertAll(builtinAmateur)
+    //insertAll(builtinShortwave)
+    //insertAll(builtinAmateur)
     finalizeList()
 
     function getFrequencyBoundsInRange (lo, hi) {

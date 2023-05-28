@@ -4,7 +4,7 @@
 </script>
 <label on:click>
     <input type="checkbox" class="hidden peer" autocomplete="off" bind:checked={checked} on:change>
-    <div class="basic-button" type="button">
+    <div class="basic-button"> <!--type="button"-->
         {name}
     </div>
 </label>

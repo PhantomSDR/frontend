@@ -1,13 +1,5 @@
-import { ZSTDDecoder } from 'zstddec'
 import * as fzstd from 'fzstd'
-
-import getLiquidDSP from '../modules/LiquidDSP'
-import jsDSPModule from '../modules/jsDSP'
-
-import FoxenFlacDecoder from '../modules/FoxenFlac'
-
-import jsDSPWasm from '../modules/jsDSP.wasm?url'
-import jsDSPMem from '../modules/jsDSPnoWasm.js.mem?url'
+import { Audio, AudioCodec, ZstdWaterfallDecoder, firdes_kaiser_lowpass, __wbg_set_wasm } from '../modules/phantomsdrdsp_bg.js'
 
 // https://stackoverflow.com/questions/47879864/how-can-i-check-if-a-browser-supports-webassembly
 const hasWasm = (() => {
@@ -26,178 +18,73 @@ if (!window.crypto) {
   window.crypto = window.msCrypto
 }
 
-export let jsDSP
-export let LiquidDSP
-export let ZSTDSimpleDecode
-
-export function createFlacDecoder () {
-  return new FoxenFlacDecoder(jsDSP)
-}
-
-export function createOpusDecoder (samplerate) {
-  const decoder = new OpusWasmDecoder(samplerate)
-  return decoder
-}
-
-class OpusWasmDecoder {
-  constructor (samplerate) {
-    this.err = jsDSP._malloc(4)
-    this.opusout = jsDSP._malloc(2048)
-    this.opusin = jsDSP._malloc(2048)
-    this.opusinarr = new Uint8Array(jsDSP.HEAPU8.buffer, this.opusin, 2048)
-    this.opusoutarr = new Uint16Array(jsDSP.HEAPU8.buffer, this.opusout, 2048 / 2)
-    this.decoder = jsDSP._opus_decoder_create(samplerate, 1, this.err)
-    this.first = true
-  }
-
-  decode (array) {
-    this.opusinarr.set(array)
-    const decoded = jsDSP._opus_decode(this.decoder, this.opusin, array.length, this.opusout, 16384, 0)
-    return new Int16Array(this.opusoutarr.slice(0, decoded))
-  }
-
-  destroy () {
-    jsDSP._free(this.err)
-    jsDSP._free(this.opusin)
-    jsDSP._free(this.opusout)
-    jsDSP._opus_decoder_destroy(this.decoder)
+export function createDecoder (audioCodec, codecRate, inputRate, outputRate) {
+  switch (audioCodec) {
+    case 'flac':
+      return new Audio(AudioCodec.Flac, codecRate, inputRate, outputRate)
+    case 'opus':
+      return new Audio(AudioCodec.Opus, codecRate, inputRate, outputRate)
   }
 }
 
-const zstdPromise = (function zstdInit () {
-  if (hasWasm) {
-    const decoder = new ZSTDDecoder()
-    return decoder.init().then(() => {
-      ZSTDSimpleDecode = (ZSTDEncoded) => {
-        return decoder.decode(ZSTDEncoded)
-      }
-    })
-  } else {
-    ZSTDSimpleDecode = (ZSTDEncoded) => {
-      return fzstd.decompress(ZSTDEncoded)
-    }
-    return Promise.resolve(fzstd)
+export { firdes_kaiser_lowpass }
+
+/*window.Atomics = window.Atomics || {
+  add (typedArray, index, value) {
+    const val = typedArray[index]
+    typedArray[index] += value
+    return val
+  },
+  and (typedArray, index, value) {
+    const val = typedArray[index]
+    typedArray[index] &= value
+    return val
+  },
+  exchange (typedArray, index, value) {
+    const val = typedArray[index]
+    typedArray[index] = value
+    return val
+  },
+  load (typedArray, index) {
+    return typedArray[index]
+  },
+  or (typedArray, index, value) {
+    const val = typedArray[index]
+    typedArray[index] |= value
+    return val
+  },
+  store (typedArray, index, value) {
+    typedArray[index] = value
+    return value
+  },
+  sub (typedArray, index, value) {
+    const val = typedArray[index]
+    typedArray[index] -= value
+    return val
+  },
+  xor (typedArray, index, value) {
+    const val = typedArray[index]
+    typedArray[index] ^= value
+    return val
   }
-})()
+}*/
 
-const jsDSPOptions = {
-  locateFile (path, prefix) {
-    // if it's a mem init file, use a custom dir
-    if (path.endsWith('.mem')) return jsDSPMem
-    if (path.endsWith('.wasm')) return jsDSPWasm
-    // otherwise, use the default, the prefix (JS file's dir) + the path
-    return prefix + path
-  }
-}
-
-const jsDSPPromise = (function initjsDSP () {
-  if (hasWasm) {
-    return jsDSPModule(jsDSPOptions).then((jsDSPModule) => {
-      jsDSP = jsDSPModule
-      LiquidDSP = getLiquidDSP(jsDSPModule)
-      return LiquidDSP
-    })
-  } else {
-    window.Atomics = window.Atomics || {
-      add (typedArray, index, value) {
-        const val = typedArray[index]
-        typedArray[index] += value
-        return val
-      },
-      and (typedArray, index, value) {
-        const val = typedArray[index]
-        typedArray[index] &= value
-        return val
-      },
-      exchange (typedArray, index, value) {
-        const val = typedArray[index]
-        typedArray[index] = value
-        return val
-      },
-      load (typedArray, index) {
-        return typedArray[index]
-      },
-      or (typedArray, index, value) {
-        const val = typedArray[index]
-        typedArray[index] |= value
-        return val
-      },
-      store (typedArray, index, value) {
-        typedArray[index] = value
-        return value
-      },
-      sub (typedArray, index, value) {
-        const val = typedArray[index]
-        typedArray[index] -= value
-        return val
-      },
-      xor (typedArray, index, value) {
-        const val = typedArray[index]
-        typedArray[index] ^= value
-        return val
-      }
-    }
-    return import('../modules/jsDSPnoWasm').then((jsDSP) => {
-      return jsDSP.default(jsDSPOptions)
-    }).then(jsDSPModule => {
-      jsDSP = jsDSPModule
-      LiquidDSP = getLiquidDSP(jsDSPModule)
-      return LiquidDSP
-    })
-  }
-})()
-
-async function liquidDSPResampCreateJS (fromSamplerate, toSampleRate, channels) {
-  const bw = Math.min(fromSamplerate / toSampleRate * 0.49, 0.49)
-  const resampler = new LiquidDSP.Resamp(toSampleRate / fromSamplerate, 10, bw, 60, 32)
-  resampler.resample = resampler.execute
-  return resampler
-}
-
-async function liquidDSPMsResampCreateJS (fromSamplerate, toSampleRate, channels) {
-  const resampler = new LiquidDSP.MsResamp(toSampleRate / fromSamplerate, 60)
-  resampler.resample = resampler.execute
-  return resampler
-}
-
-export const createResampler = liquidDSPMsResampCreateJS
-
-export class ZstdWaterfallDecoder {
-  decode (array) {
-    const compressedArray = new Uint8Array(array).subarray(8)
-    const header = new Uint32Array(array.slice(0, 8))
-    array = new Int8Array(ZSTDSimpleDecode(compressedArray))
-    return [[array, header[0], header[1]]]
+export function createWaterfallDecoder(format) {
+  switch (format) {
+    case 'zstd':
+      return new ZstdWaterfallDecoder()
+    case 'av1':
+      return new ZstdWaterfallDecoder()
   }
 }
 
-export class AV1WaterfallDecoder {
-  constructor () {
-    this.dav1d = new jsDSP.Dav1dDecoder()
-  }
-
-  decode (array) {
-    const decoded = this.dav1d.dav1d_decode(new Uint8Array(array))
-    this.dav1d.dav1d_picture_free()
-
-    if (typeof decoded === 'string') {
-      console.log(decoded)
-      return []
-    }
-
-    const waterfallArr = []
-    const metadata = new Uint32Array(ZSTDSimpleDecode(decoded.itut_t35).slice(0).buffer)
-    for (let i = 0; i < decoded.height; i++) {
-      const arr = new Int8Array(metadata[i * 4 + 2])
-      const stride = decoded.stride[0]
-      for (let j = 0; j < arr.length; j++) {
-        arr[j] = decoded.plane[0][stride * i + j] ^ 0x80
-      }
-      waterfallArr.push([arr, metadata[i * 4 + 0], metadata[i * 4 + 1]])
-    }
-    return waterfallArr
-  }
-}
 export default async function initWrappers () {
-  return Promise.all([zstdPromise, jsDSPPromise])
+  let wasm;
+  if (hasWasm) {
+    wasm = await import("../modules/phantomsdrdsp_bg.wasm");
+  } else {
+    wasm = await import("../modules/phantomsdrdsp_bg_fallback.js");
+  }
+  __wbg_set_wasm(wasm);
+  wasm.__wbindgen_start();
 }

@@ -16,7 +16,6 @@
   import { availableColormaps, drawColormapPreview } from './lib/colormaps'
   import { init, audio, waterfall, events, FFTOffsetToFrequency, frequencyToFFTOffset, frequencyToWaterfallOffset, getMaximumBandwidth, waterfallOffsetToFrequency } from './lib/backend.js'
   import { constructLink, parseLink, storeInLocalStorage } from './lib/storage.js'
-  import Decoder from './lib/decoder.js'
 
   let waterfallCanvas
   let spectrumCanvas
@@ -269,13 +268,13 @@
   let NBEnabled = false
   let ANEnabled = false
   function handleNRChange () {
-    audio.audioProcessor.setNR(NREnabled)
+    audio.decoder.set_nr(NREnabled)
   }
   function handleNBChange () {
-    audio.audioProcessor.setNB(NBEnabled)
+    audio.decoder.set_nb(NBEnabled)
   }
   function handleANChange () {
-    audio.audioProcessor.setAN(ANEnabled)
+    audio.decoder.set_an(ANEnabled)
   }
 
   // Regular updating UI elements:
@@ -327,9 +326,9 @@
   // Decoder settings
   let logger
   let signalDecoder = 'none'
-  const decoders = ['none', 'rds', 'ft8']
+  const decoders = ['none']//, 'rds', 'ft8']
   async function handleDecoderChange (e, changed) {
-    if (audio.getSignalDecoder()) {
+    /*if (audio.getSignalDecoder()) {
       audio.getSignalDecoder().stop()
       audio.setSignalDecoder(null)
     }
@@ -342,7 +341,7 @@
       // Wait for the decode to initialize before running
       await decoder.promise()
       audio.setSignalDecoder(decoder)
-    }
+    }*/
   }
 
   const backendPromise = init()
@@ -404,8 +403,8 @@
     updateInterval = setInterval(updateTick, 200)
 
     // For debugging
-    window.spectrumAudio = audio
-    window.spectrumWaterfall = waterfall
+    window['spectrumAudio'] = audio
+    window['spectrumWaterfall'] = waterfall
   })
 
   onDestroy(() => {
@@ -447,8 +446,8 @@
   />
 
 <main>
-  <div class="flex flex-col-reverse sm:flex-row">
-    <div class="w-full sm:w-1/2 md:w-2/3 lg:w-3/4 sm:transition-all sm:ease-linear sm:duration-100 cursor-crosshair overflow-x-hidden">
+  <div class="h-screen overflow-hidden flex flex-col-reverse sm:flex-row">
+    <div class="w-full h-full sm:w-1/2 md:w-2/3 lg:w-3/4 sm:transition-all sm:ease-linear sm:duration-100 cursor-crosshair overflow-hidden">
       <FrequencyInput bind:this={frequencyInputComponent} on:change={handleFrequencyChange}></FrequencyInput>
       <canvas class="w-full bg-black peer {spectrumDisplay ? 'max-h-full' : 'max-h-0'}" bind:this={spectrumCanvas}
         on:wheel={handleWaterfallWheel}
@@ -474,7 +473,7 @@
         on:panmove={handleWaterfallPanMove}
         on:wheel={handleWaterfallWheel}
         on:mousedown={handleWaterfallMouseDown}
-      width="1024" height="2000"></canvas></div>
+      width="1024" height="4096"></canvas></div>
       <!--<div class="fixed border border-black text-xs px-1 hidden 
       transition-opacity duration-100 bg-blue-800 text-gray-400
         peer-hover:block {frequencyHintActive ? 'opacity-1' : 'opacity-0'}"
@@ -485,7 +484,7 @@
         <Logger bind:this={logger} capacity={1000}></Logger>
       </div>
     </div>
-    <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 sm:transition-all sm:ease-linear sm:duration-100">
+    <div class="w-full h-screen overflow-y-scroll sm:w-1/2 md:w-1/3 lg:w-1/4 sm:transition-all sm:ease-linear sm:duration-100">
       <div class="tab">
         <div class="m-2">
         </div>
@@ -502,7 +501,7 @@
                   on:click={(e) => handleDemodulationChange(e, false)}
                   on:change={(e) => handleDemodulationChange(e, true)}  class="hidden peer" name="demodulation" value={demodulator}
                     autocomplete="off">
-                <div class="basic-button m-1" type="button">
+                <div class="basic-button m-1"> <!--type="button"-->
                     {demodulator} 
                 </div>
               </label>
@@ -644,8 +643,8 @@
         </div>
         <div class="m-2">
           <div class="flex">
-            <div class="border border-blue-500 text-blue-500 transition-all duration-100 text-center text-xs px-2 py-1 active:bg-blue-600 active:text-white" on:click={handleLinkCopyClick}>
-              <button>📋 Link:</button>
+            <div class="border border-blue-500 text-blue-500 transition-all duration-100 text-center text-xs px-2 py-1 active:bg-blue-600 active:text-white">
+              <button on:click={handleLinkCopyClick}>📋 Link:</button>
               <Popover text="Copied!"></Popover>
             </div>
             <input type="text" class="flex-grow bg-transparent text-white border border-l-0 border-blue-500 text-xs px-2" value={link} readonly/>
@@ -663,7 +662,7 @@
                 <input type="radio" bind:group={signalDecoder}
                   on:change={(e) => handleDecoderChange(e, true)}  class="hidden peer" name="decoder" value={decoder}
                     autocomplete="off">
-                <div class="basic-button m-1" type="button">
+                <div class="basic-button m-1"> <!--type="button"-->
                     {decoder} 
                 </div>
               </label>

@@ -1,6 +1,6 @@
 
 import getColormap, { computeColormapArray } from './lib/colormaps.js'
-import { AV1WaterfallDecoder, ZstdWaterfallDecoder } from './lib/wrappers.js'
+import { createWaterfallDecoder } from './lib/wrappers.js'
 import Deque from 'double-ended-queue'
 import 'core-js/actual/set-immediate'
 import 'core-js/actual/clear-immediate'
@@ -13,7 +13,7 @@ export default class SpectrumWaterfall {
     this.waterfall = false
 
     this.waterfallQueue = new Deque(10)
-    this.drawnWaterfallQueue = new Deque(1024)
+    this.drawnWaterfallQueue = new Deque(4096)
     this.lagTime = 0
     this.spectrumAlpha = 0.5
     this.spectrumFiltered = [[-1, -1], [0]]
@@ -59,6 +59,12 @@ export default class SpectrumWaterfall {
     this.tempCanvasElem.height = 200
 
     this.waterfall = true
+
+    /*window.addEventListener('resize', () => {
+      this.canvasElem.height = window.innerHeight * 2
+      this.canvasHeight = this.canvasElem.height
+      this.redrawWaterfall()
+    })*/
   }
 
   async init () {
@@ -123,11 +129,7 @@ export default class SpectrumWaterfall {
       this.waterfallSocket.onmessage = this.socketMessage.bind(this)
       this.firstWaterfallMessage = false
 
-      if (settings.waterfall_compression === 'av1') {
-        this.waterfallDecoder = new AV1WaterfallDecoder()
-      } else if (settings.waterfall_compression === 'zstd') {
-        this.waterfallDecoder = new ZstdWaterfallDecoder()
-      }
+      this.waterfallDecoder = createWaterfallDecoder(settings.waterfall_compression)
       this.updateGraduation()
       this.resolvePromise(settings)
     }
@@ -145,7 +147,7 @@ export default class SpectrumWaterfall {
 
     return (evt.clientX - rect.left) * scaleX
   }
-
+  
   enqueueSpectrogram (array) {
     // Do not decode or draw if not requested
     if (!this.waterfall && !this.spectrum) {
@@ -157,8 +159,16 @@ export default class SpectrumWaterfall {
       this.waterfallQueue.pop()
     }
 
+
+    function decodePacket (packet) {
+      let packetview = new DataView(packet.buffer);
+      let l = packetview.getUint32(8, true);
+      let r = packetview.getUint32(12, true);
+      return [new Int8Array(packet.buffer, 16), l, r]
+    }
+
     // Decode and extract header
-    this.waterfallDecoder.decode(array).forEach((element) => {
+    this.waterfallDecoder.decode(array).map(decodePacket).forEach((element) => {
       this.waterfallQueue.unshift(element)
     })
   }
@@ -208,7 +218,7 @@ export default class SpectrumWaterfall {
     const [waterfallArray, curL, curR] = this.waterfallQueue.pop()
 
     const [arr, pxL, pxR] = this.calculateOffsets(waterfallArray, curL, curR)
-
+    
     if (this.waterfall) {
       this.drawWaterfall(arr, pxL, pxR, curL, curR)
     }
@@ -268,7 +278,7 @@ export default class SpectrumWaterfall {
     this.drawWaterfallLine(arr, pxL, pxR, this.curLine)
 
     // Shift the spectrogram down by 1 pixel
-    this.canvasElem.style.transform = `translate3d(0, -${(this.curLine + 1) / this.canvasHeight * 100}%, 0)`
+    this.canvasElem.style.transform = `translate3d(0, -${((this.curLine + 1) / this.canvasHeight * 100).toFixed(8)}%, 0)`
 
     // Once we have reached the start of the canvas, reset to the middle
     if (this.curLine === 0) {
@@ -328,7 +338,7 @@ export default class SpectrumWaterfall {
     let graduationSpacing = 1
 
     // Calculate the scale where at least 20 graduation spacings will be drawn
-    while ((freqR - freqL) / graduationSpacing > 5) {
+    while ((freqR - freqL) / graduationSpacing > 8) {
       graduationSpacing *= 10
     }
     graduationSpacing /= 10
@@ -346,9 +356,12 @@ export default class SpectrumWaterfall {
     // Find the least amount of trailing zeros
     let minimumTrailingZeros = 5
     for (let freqStart = freqLStart; freqStart <= freqR; freqStart += graduationSpacing) {
-      const trailingZeros = freqStart.toString().match(/0*$/g)[0].length
-      minimumTrailingZeros = Math.min(minimumTrailingZeros, trailingZeros)
+      if (freqStart != 0) {
+        const trailingZeros = freqStart.toString().match(/0*$/g)[0].length
+        minimumTrailingZeros = Math.min(minimumTrailingZeros, trailingZeros)
+      }
     }
+    
     this.graduationCtx.font = '15px Arial'
     for (; freqLStart <= freqR; freqLStart += graduationSpacing) {
       // find the middle pixel
@@ -436,7 +449,7 @@ export default class SpectrumWaterfall {
     this.ctx.drawImage(this.canvasElem, 0, 0, this.canvasWidth, this.canvasHeight, newCanvasX1, 0, newCanvasWidth, this.canvasHeight)
 
     // Special case for zoom out or panning, blank the borders
-    if ((prevR - prevL) <= (waterfallR - waterfallL)) {
+    if ((prevR - prevL) <= (waterfallR - waterfallL) + 1) {
       this.ctx.fillStyle = this.backgroundColor
       this.ctx.fillRect(0, 0, newCanvasX1, this.canvasHeight)
       this.ctx.fillRect(newCanvasX2, 0, this.canvasWidth - newCanvasX2, this.canvasHeight)
