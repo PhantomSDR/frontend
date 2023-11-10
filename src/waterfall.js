@@ -159,16 +159,8 @@ export default class SpectrumWaterfall {
       this.waterfallQueue.pop()
     }
 
-
-    function decodePacket (packet) {
-      let packetview = new DataView(packet.buffer);
-      let l = packetview.getUint32(8, true);
-      let r = packetview.getUint32(12, true);
-      return [new Int8Array(packet.buffer, 16), l, r]
-    }
-
     // Decode and extract header
-    this.waterfallDecoder.decode(array).map(decodePacket).forEach((element) => {
+    this.waterfallDecoder.decode(array).forEach((element) => {
       this.waterfallQueue.unshift(element)
     })
   }

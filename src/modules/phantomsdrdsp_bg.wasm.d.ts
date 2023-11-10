@@ -1,10 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
-export function __wbg_zstdwaterfalldecoder_free(a: number): void;
-export function zstdwaterfalldecoder_new(): number;
-export function zstdwaterfalldecoder_clear(a: number): void;
-export function zstdwaterfalldecoder_decode(a: number, b: number, c: number, d: number): void;
+export function __wbg_foxenflacdecoder_free(a: number): void;
+export function foxenflacdecoder_new(): number;
 export function malloc(a: number): number;
 export function calloc(a: number, b: number): number;
 export function free(a: number): void;
@@ -16,19 +14,21 @@ export function audio_set_nr(a: number, b: number): void;
 export function audio_set_nb(a: number, b: number): void;
 export function audio_set_an(a: number, b: number): void;
 export function audio_set_decoded_callback(a: number, b: number): void;
-export function __wbg_foxenflacdecoder_free(a: number): void;
-export function foxenflacdecoder_new(): number;
 export function firdes_kaiser_lowpass(a: number, b: number, c: number): number;
 export function greet(): void;
 export function main(): void;
+export function __wbg_zstdstreamdecoder_free(a: number): void;
+export function zstdstreamdecoder_new(): number;
+export function zstdstreamdecoder_clear(a: number): void;
+export function zstdstreamdecoder_decode(a: number, b: number, c: number, d: number): void;
 export function rust_zstd_wasm_shim_malloc(a: number): number;
 export function rust_zstd_wasm_shim_calloc(a: number, b: number): number;
 export function rust_zstd_wasm_shim_free(a: number): void;
 export function rust_zstd_wasm_shim_memcpy(a: number, b: number, c: number): number;
 export function rust_zstd_wasm_shim_memmove(a: number, b: number, c: number): number;
 export function rust_zstd_wasm_shim_memset(a: number, b: number, c: number): number;
-export function __wbindgen_add_to_stack_pointer(a: number): number;
 export function __wbindgen_malloc(a: number): number;
+export function __wbindgen_add_to_stack_pointer(a: number): number;
 export function __wbindgen_free(a: number, b: number): void;
 export function __wbindgen_realloc(a: number, b: number, c: number): number;
 export function __wbindgen_exn_store(a: number): void;

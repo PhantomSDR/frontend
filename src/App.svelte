@@ -196,8 +196,8 @@
     switch (type) {
       case 'max':
         m = Math.min(waterfall.waterfallMaxSize - 512, Math.max(512, m))
-        l = m - 512
-        r = m + 512
+        l = Math.floor(m - 512)
+        r = Math.ceil(m + 512)
         break
       case '+':
         e.coords = { x: offset }
@@ -221,7 +221,7 @@
   }
 
   let mute
-  let volume = 75
+  let volume = 50
   let squelchEnable
   let squelch = -50
   let power = 0
@@ -255,7 +255,7 @@
     audio.setMute(mute)
   }
   function handleVolumeChange () {
-    audio.setGain(Math.pow(10, (volume - 50) / 20))
+    audio.setGain(Math.pow(10, (volume - 50) / 50 + 2.8))
   }
   function handleSquelchChange () {
     audio.setSquelch(squelchEnable)
@@ -290,7 +290,14 @@
       const myRange = audio.getAudioRange()
       const clients = events.getSignalClients()
       // Don't show our own tuning
-      const myId = Object.keys(clients).find(k => (clients[k][1] - myRange[1]) < 1e-6)
+      // Find the id that is closest to myRange[i]
+      const myId = Object.keys(clients).reduce((a, b) => {
+        const aRange = clients[a]
+        const bRange = clients[b]
+        const aDiff = Math.abs(aRange[1] - myRange[1])
+        const bDiff = Math.abs(bRange[1] - myRange[1])
+        return aDiff < bDiff ? a : b
+      })
       delete clients[myId]
       waterfall.setClients(clients)
       requestAnimationFrame(() => {

@@ -50,7 +50,9 @@ export default class SpectrumEvent {
   }
 
   getSignalClients () {
-    return this.signalClients
+    let signalClients = {}
+    Object.assign(signalClients, this.signalClients)
+    return signalClients
   }
 
   getLastModified () {

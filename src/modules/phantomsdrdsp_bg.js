@@ -62,6 +62,32 @@ function passArray8ToWasm0(arg, malloc) {
     return ptr;
 }
 
+function isLikeNone(x) {
+    return x === undefined || x === null;
+}
+/**
+*/
+export function greet() {
+    wasm.greet();
+}
+
+/**
+*/
+export function main() {
+    wasm.main();
+}
+
+/**
+* @param {number} cutoff
+* @param {number} transition_bw
+* @param {number} max_ripple
+* @returns {Float32Array}
+*/
+export function firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple) {
+    const ret = wasm.firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple);
+    return takeObject(ret);
+}
+
 let cachedInt32Memory0 = null;
 
 function getInt32Memory0() {
@@ -89,32 +115,6 @@ function getArrayJsValueFromWasm0(ptr, len) {
         result.push(takeObject(slice[i]));
     }
     return result;
-}
-
-function isLikeNone(x) {
-    return x === undefined || x === null;
-}
-/**
-*/
-export function greet() {
-    wasm.greet();
-}
-
-/**
-*/
-export function main() {
-    wasm.main();
-}
-
-/**
-* @param {number} cutoff
-* @param {number} transition_bw
-* @param {number} max_ripple
-* @returns {Float32Array}
-*/
-export function firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple) {
-    const ret = wasm.firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple);
-    return takeObject(ret);
 }
 
 const lTextEncoder = typeof TextEncoder === 'undefined' ? (0, module.require)('util').TextEncoder : TextEncoder;
@@ -283,11 +283,11 @@ export class FoxenFlacDecoder {
 }
 /**
 */
-export class ZstdWaterfallDecoder {
+export class ZstdStreamDecoder {
 
     static __wrap(ptr) {
         ptr = ptr >>> 0;
-        const obj = Object.create(ZstdWaterfallDecoder.prototype);
+        const obj = Object.create(ZstdStreamDecoder.prototype);
         obj.__wbg_ptr = ptr;
 
         return obj;
@@ -302,18 +302,18 @@ export class ZstdWaterfallDecoder {
 
     free() {
         const ptr = this.__destroy_into_raw();
-        wasm.__wbg_zstdwaterfalldecoder_free(ptr);
+        wasm.__wbg_zstdstreamdecoder_free(ptr);
     }
     /**
     */
     constructor() {
-        const ret = wasm.zstdwaterfalldecoder_new();
-        return ZstdWaterfallDecoder.__wrap(ret);
+        const ret = wasm.zstdstreamdecoder_new();
+        return ZstdStreamDecoder.__wrap(ret);
     }
     /**
     */
     clear() {
-        wasm.zstdwaterfalldecoder_clear(this.__wbg_ptr);
+        wasm.zstdstreamdecoder_clear(this.__wbg_ptr);
     }
     /**
     * @param {Uint8Array} input
@@ -324,7 +324,7 @@ export class ZstdWaterfallDecoder {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
             const ptr0 = passArray8ToWasm0(input, wasm.__wbindgen_malloc);
             const len0 = WASM_VECTOR_LEN;
-            wasm.zstdwaterfalldecoder_decode(retptr, this.__wbg_ptr, ptr0, len0);
+            wasm.zstdstreamdecoder_decode(retptr, this.__wbg_ptr, ptr0, len0);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v2 = getArrayJsValueFromWasm0(r0, r1).slice();
@@ -340,13 +340,13 @@ export function __wbindgen_object_drop_ref(arg0) {
     takeObject(arg0);
 };
 
+export function __wbg_alert_379870a8a3d45260(arg0, arg1) {
+    alert(getStringFromWasm0(arg0, arg1));
+};
+
 export function __wbindgen_object_clone_ref(arg0) {
     const ret = getObject(arg0);
     return addHeapObject(ret);
-};
-
-export function __wbg_alert_379870a8a3d45260(arg0, arg1) {
-    alert(getStringFromWasm0(arg0, arg1));
 };
 
 export function __wbg_new_abda76e883ba8a5f() {

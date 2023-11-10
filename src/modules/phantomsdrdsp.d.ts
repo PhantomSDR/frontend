@@ -63,7 +63,7 @@ export class FoxenFlacDecoder {
 }
 /**
 */
-export class ZstdWaterfallDecoder {
+export class ZstdStreamDecoder {
   free(): void;
 /**
 */
