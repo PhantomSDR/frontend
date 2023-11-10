@@ -104,9 +104,18 @@ export default class SpectrumWaterfall {
       this.overlap = settings.overlap
 
       this.canvasElem.width = settings.waterfall_size
+
+      this.canvasScale = settings.waterfall_size / 1024
+
+      // Aspect ratio is 1024 to 128px
       this.spectrumCanvasElem.width = settings.waterfall_size
+      this.spectrumCanvasElem.height = settings.waterfall_size / 1024 * 128
+
       this.tempCanvasElem.width = settings.waterfall_size
+
+      // Aspect ratio is 1024 to 20px
       this.graduationCanvasElem.width = settings.waterfall_size
+      this.graduationCanvasElem.height = settings.waterfall_size / 1024 * 20
 
       this.canvasElem.height = this.canvasElem.parentElement.clientHeight * 2
       this.canvasWidth = this.canvasElem.width
@@ -296,6 +305,7 @@ export default class SpectrumWaterfall {
     arr = this.spectrumFiltered[1]
 
     const pixels = (pxR - pxL) / arr.length
+    let scale = this.canvasScale
 
     arr = arr.map((x) => 255 - x)
 
@@ -306,11 +316,11 @@ export default class SpectrumWaterfall {
 
     // Draw the line
     this.spectrumCtx.beginPath()
-    this.spectrumCtx.moveTo(pxL, arr[0] / 2)
+    this.spectrumCtx.moveTo(pxL, arr[0] / 2 * scale)
     arr.forEach((x, i) => {
-      this.spectrumCtx.lineTo(pxL + pixels / 2 + i * pixels, x / 2)
+      this.spectrumCtx.lineTo(pxL + pixels / 2 + i * pixels, x / 2 * scale)
     })
-    this.spectrumCtx.lineTo(pxR, arr[arr.length - 1] / 2)
+    this.spectrumCtx.lineTo(pxR, arr[arr.length - 1] / 2 * scale)
     this.spectrumCtx.stroke()
 
     if (this.spectrumFreq) {
@@ -318,7 +328,7 @@ export default class SpectrumWaterfall {
       this.spectrumCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
       this.spectrumCtx.beginPath()
       this.spectrumCtx.moveTo(this.spectrumX, 0)
-      this.spectrumCtx.lineTo(this.spectrumX, 128)
+      this.spectrumCtx.lineTo(this.spectrumX, 128 * scale)
       this.spectrumCtx.stroke()
     }
   }
@@ -326,6 +336,7 @@ export default class SpectrumWaterfall {
   updateGraduation () {
     const freqL = this.idxToFreq(this.waterfallL)
     const freqR = this.idxToFreq(this.waterfallR)
+    const scale = this.canvasScale
 
     let graduationSpacing = 1
 
@@ -354,7 +365,7 @@ export default class SpectrumWaterfall {
       }
     }
     
-    this.graduationCtx.font = '15px Arial'
+    this.graduationCtx.font = `${10 * scale}px Arial`
     for (; freqLStart <= freqR; freqLStart += graduationSpacing) {
       // find the middle pixel
       const middlePixel = (freqLStart - freqL) / (freqR - freqL) * this.canvasWidth
@@ -371,12 +382,13 @@ export default class SpectrumWaterfall {
 
       if (printFreq) {
         this.graduationCtx.textAlign = 'center'
-        this.graduationCtx.fillText((freqLStart / 1000000).toFixed(6 - minimumTrailingZeros) + ' MHz', middlePixel, 10)
+        this.graduationCtx.fillText((freqLStart / 1000000).toFixed(6 - minimumTrailingZeros) + ' MHz', middlePixel, 7.5 * scale)
       }
       // draw a line in the middle of it
+      this.graduationCtx.lineWidth = 1 * scale
       this.graduationCtx.beginPath()
-      this.graduationCtx.moveTo(middlePixel, 10 + 0)
-      this.graduationCtx.lineTo(middlePixel, 10 + lineHeight)
+      this.graduationCtx.moveTo(middlePixel, (10 + (10 - lineHeight)) * scale)
+      this.graduationCtx.lineTo(middlePixel, (20) * scale)
       this.graduationCtx.stroke()
     }
 

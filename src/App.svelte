@@ -230,7 +230,7 @@
 
   // Bandwidth offset controls
   let bandwithoffsets = [
-    '-10000', '-100', '-10', '+10', '+100', '+10000'
+    '-10000', '-1000', '-100', '-10', '+10', '+100', '+1000', '+10000'
   ]
   function handleBandwidthOffsetClick (e, bandwidthoffset) {
     bandwidthoffset = parseFloat(bandwidthoffset)
@@ -405,6 +405,7 @@
     handleWaterfallColormapSelect()
     handleDemodulationChange({}, true)
     handleSpectrumChange()
+    handleVolumeChange()
     updateLink()
 
     updateInterval = setInterval(updateTick, 200)
@@ -412,6 +413,7 @@
     // For debugging
     window['spectrumAudio'] = audio
     window['spectrumWaterfall'] = waterfall
+
   })
 
   onDestroy(() => {
@@ -664,17 +666,17 @@
         </div>
         <div class="m-2">
           <div class="grid grid-cols-4">
-              {#each decoders as decoder (decoder)}
-              <label>
-                <input type="radio" bind:group={signalDecoder}
-                  on:change={(e) => handleDecoderChange(e, true)}  class="hidden peer" name="decoder" value={decoder}
-                    autocomplete="off">
-                <div class="basic-button m-1"> <!--type="button"-->
-                    {decoder} 
-                </div>
-              </label>
-              {/each}
-          </div>
+            {#each decoders as decoder (decoder)}
+            <label>
+              <input type="radio" bind:group={signalDecoder}
+                on:change={(e) => handleDecoderChange(e, true)}  class="hidden peer" name="decoder" value={decoder}
+                  autocomplete="off">
+              <div class="basic-button m-1"> <!--type="button"-->
+                  {decoder} 
+              </div>
+            </label>
+            {/each}
+        </div>
     </div>
   </div>
 </main>

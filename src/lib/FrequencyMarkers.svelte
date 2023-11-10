@@ -1,5 +1,5 @@
 <script>
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, onMount } from 'svelte'
     import bounds from 'binary-search-bounds'
 
     import { frequencyToWaterfallOffset, getFrequencyView } from '../lib/backend'
@@ -7,7 +7,7 @@
     import builtinShortwave from '../assets/shortwavestations.json'
     import builtinAmateur from '../assets/amateurfrequencies.json'
     const dispatch = createEventDispatcher()
-    
+    let markerDiv;
     const frequencyList = []
     function insertAll (frequencies) {
       for (const frequency of frequencies) {
@@ -23,11 +23,13 @@
     }
     function finalizeList () {
       frequencyList.sort(frequencyListComparator)
+      if (frequencyList.length === 0) {
+        markerDiv.style.display = 'none'
+      }
     }
     
     //insertAll(builtinShortwave)
     //insertAll(builtinAmateur)
-    finalizeList()
 
     function getFrequencyBoundsInRange (lo, hi) {
       return [bounds.ge(frequencyList, [lo], frequencyListComparator), bounds.ge(frequencyList, [hi], frequencyListComparator)]
@@ -60,8 +62,11 @@
         frequencyMarkers[i].left = frequencyToWaterfallOffset(frequencyMarkers[i].frequency)
       }
     }
+    onMount(() => {
+      finalizeList()
+    })
 </script>
-<div on:click|self on:wheel|self class="w-full h-4 bg-black relative">
+<div on:click|self on:wheel|self class="w-full h-4 bg-black relative" bind:this={markerDiv}>
     {#each frequencyMarkers as frequencyMarker (frequencyMarker.frequency)}
     <div class="h-4 absolute p-0 group" style="left: {frequencyMarker.left * 100}%"
         on:click={() => dispatch('markerclick', frequencyMarker)}>
