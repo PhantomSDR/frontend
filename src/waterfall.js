@@ -35,6 +35,7 @@ export default class SpectrumWaterfall {
   initCanvas (settings) {
     this.canvasElem = settings.canvasElem
     this.ctx = this.canvasElem.getContext('2d')
+    this.ctx.imageSmoothingEnabled = true
     this.canvasWidth = this.canvasElem.width
     this.canvasHeight = this.canvasElem.height
     this.backgroundColor = window.getComputedStyle(document.body, null).getPropertyValue('background-color')
@@ -103,7 +104,7 @@ export default class SpectrumWaterfall {
       this.totalBandwidth = settings.total_bandwidth
       this.overlap = settings.overlap
 
-      let canvasWidth = this.canvasElem.parentElement.clientWidth * 2
+      let canvasWidth = this.canvasElem.parentElement.clientWidth * window.devicePixelRatio
 
       this.canvasElem.width = canvasWidth
 
@@ -281,7 +282,8 @@ export default class SpectrumWaterfall {
     this.drawWaterfallLine(arr, pxL, pxR, this.curLine)
     
     // Shift the spectrogram down by 1 pixel
-    this.canvasElem.style.transform = `translate3d(0, -${((this.curLine + 1) / this.canvasHeight * 100)}%, 0) rotate(.0001deg)`
+    //let shift = (this.curLine + 1 - this.canvasHeight / 4);
+    this.canvasElem.style.transform = `translate3d(0, -${(this.curLine + 1) / window.devicePixelRatio}px, 0)`
 
     // Once we have reached the start of the canvas, reset to the middle
     if (this.curLine === 0) {

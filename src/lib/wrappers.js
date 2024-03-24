@@ -150,7 +150,7 @@ export class JitterBuffer {
   add(packet, delay) {
     let queueLength = this.buffer.unshift(packet);
     let variance = this.variance.add(delay);
-    let packetAmount = Math.max(2, Math.ceil(variance * 20 / this.timePerPacket));
+    let packetAmount = Math.max(2, Math.ceil(variance * 10 / this.timePerPacket));
     for (let i = packetAmount; i < queueLength; i++) {
       this.buffer.pop();
     }
