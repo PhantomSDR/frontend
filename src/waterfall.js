@@ -134,7 +134,8 @@ export default class SpectrumWaterfall {
       console.log('Waterfall FPS: ' + waterfallFPS)
 
       this.waterfallDrawInterval = setInterval(() => {
-        requestAnimationFrame(this.drawSpectrogram.bind(this))
+        //requestAnimationFrame(this.drawSpectrogram.bind(this))
+        this.drawSpectrogram()
       }, Math.floor(1000 / waterfallFPS))
 
       this.waterfallL = 0
