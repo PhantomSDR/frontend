@@ -52,19 +52,6 @@ function getStringFromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
-
-let WASM_VECTOR_LEN = 0;
-
-function passArray8ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 1) >>> 0;
-    getUint8Memory0().set(arg, ptr / 1);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
-
-function isLikeNone(x) {
-    return x === undefined || x === null;
-}
 /**
 */
 export function greet() {
@@ -86,6 +73,19 @@ export function main() {
 export function firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple) {
     const ret = wasm.firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple);
     return takeObject(ret);
+}
+
+let WASM_VECTOR_LEN = 0;
+
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8Memory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function isLikeNone(x) {
+    return x === undefined || x === null;
 }
 
 let cachedInt32Memory0 = null;
@@ -138,14 +138,14 @@ function passStringToWasm0(arg, malloc, realloc) {
 
     if (realloc === undefined) {
         const buf = cachedTextEncoder.encode(arg);
-        const ptr = malloc(buf.length) >>> 0;
+        const ptr = malloc(buf.length, 1) >>> 0;
         getUint8Memory0().subarray(ptr, ptr + buf.length).set(buf);
         WASM_VECTOR_LEN = buf.length;
         return ptr;
     }
 
     let len = arg.length;
-    let ptr = malloc(len) >>> 0;
+    let ptr = malloc(len, 1) >>> 0;
 
     const mem = getUint8Memory0();
 
@@ -161,11 +161,12 @@ function passStringToWasm0(arg, malloc, realloc) {
         if (offset !== 0) {
             arg = arg.slice(offset);
         }
-        ptr = realloc(ptr, len, len = offset + arg.length * 3) >>> 0;
+        ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
         const view = getUint8Memory0().subarray(ptr + offset, ptr + len);
         const ret = encodeString(arg, view);
 
         offset += ret.written;
+        ptr = realloc(ptr, len, offset, 1) >>> 0;
     }
 
     WASM_VECTOR_LEN = offset;
@@ -182,22 +183,18 @@ function handleError(f, args) {
 /**
 */
 export const AudioCodec = Object.freeze({ Flac:0,"0":"Flac",Opus:1,"1":"Opus", });
+
+const AudioFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_audio_free(ptr >>> 0));
 /**
 */
 export class Audio {
 
-    static __wrap(ptr) {
-        ptr = ptr >>> 0;
-        const obj = Object.create(Audio.prototype);
-        obj.__wbg_ptr = ptr;
-
-        return obj;
-    }
-
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
         this.__wbg_ptr = 0;
-
+        AudioFinalization.unregister(this);
         return ptr;
     }
 
@@ -206,14 +203,15 @@ export class Audio {
         wasm.__wbg_audio_free(ptr);
     }
     /**
-    * @param {number} codec
+    * @param {AudioCodec} codec
     * @param {number} _codec_rate
     * @param {number} input_rate
     * @param {number} output_rate
     */
     constructor(codec, _codec_rate, input_rate, output_rate) {
         const ret = wasm.audio_new(codec, _codec_rate, input_rate, output_rate);
-        return Audio.__wrap(ret);
+        this.__wbg_ptr = ret >>> 0;
+        return this;
     }
     /**
     * @param {Uint8Array} input
@@ -244,12 +242,16 @@ export class Audio {
         wasm.audio_set_an(this.__wbg_ptr, an);
     }
     /**
-    * @param {Function | undefined} f
+    * @param {Function | undefined} [f]
     */
     set_decoded_callback(f) {
         wasm.audio_set_decoded_callback(this.__wbg_ptr, isLikeNone(f) ? 0 : addHeapObject(f));
     }
 }
+
+const FoxenFlacDecoderFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_foxenflacdecoder_free(ptr >>> 0));
 /**
 */
 export class FoxenFlacDecoder {
@@ -258,14 +260,14 @@ export class FoxenFlacDecoder {
         ptr = ptr >>> 0;
         const obj = Object.create(FoxenFlacDecoder.prototype);
         obj.__wbg_ptr = ptr;
-
+        FoxenFlacDecoderFinalization.register(obj, obj.__wbg_ptr, obj);
         return obj;
     }
 
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
         this.__wbg_ptr = 0;
-
+        FoxenFlacDecoderFinalization.unregister(this);
         return ptr;
     }
 
@@ -281,22 +283,18 @@ export class FoxenFlacDecoder {
         return FoxenFlacDecoder.__wrap(ret);
     }
 }
+
+const ZstdStreamDecoderFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_zstdstreamdecoder_free(ptr >>> 0));
 /**
 */
 export class ZstdStreamDecoder {
 
-    static __wrap(ptr) {
-        ptr = ptr >>> 0;
-        const obj = Object.create(ZstdStreamDecoder.prototype);
-        obj.__wbg_ptr = ptr;
-
-        return obj;
-    }
-
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
         this.__wbg_ptr = 0;
-
+        ZstdStreamDecoderFinalization.unregister(this);
         return ptr;
     }
 
@@ -308,7 +306,8 @@ export class ZstdStreamDecoder {
     */
     constructor() {
         const ret = wasm.zstdstreamdecoder_new();
-        return ZstdStreamDecoder.__wrap(ret);
+        this.__wbg_ptr = ret >>> 0;
+        return this;
     }
     /**
     */
@@ -328,7 +327,7 @@ export class ZstdStreamDecoder {
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v2 = getArrayJsValueFromWasm0(r0, r1).slice();
-            wasm.__wbindgen_free(r0, r1 * 4);
+            wasm.__wbindgen_free(r0, r1 * 4, 4);
             return v2;
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
@@ -370,41 +369,41 @@ export function __wbg_error_f851667af71bcfc6(arg0, arg1) {
         deferred0_1 = arg1;
         console.error(getStringFromWasm0(arg0, arg1));
     } finally {
-        wasm.__wbindgen_free(deferred0_0, deferred0_1);
+        wasm.__wbindgen_free(deferred0_0, deferred0_1, 1);
     }
 };
 
-export function __wbg_call_587b30eea3e09332() { return handleError(function (arg0, arg1, arg2) {
+export function __wbg_call_b3ca7c6051f9bec1() { return handleError(function (arg0, arg1, arg2) {
     const ret = getObject(arg0).call(getObject(arg1), getObject(arg2));
     return addHeapObject(ret);
 }, arguments) };
 
-export function __wbg_buffer_55ba7a6b1b92e2ac(arg0) {
+export function __wbg_buffer_12d079cc21e14bdb(arg0) {
     const ret = getObject(arg0).buffer;
     return addHeapObject(ret);
 };
 
-export function __wbg_newwithbyteoffsetandlength_88d1d8be5df94b9b(arg0, arg1, arg2) {
+export function __wbg_newwithbyteoffsetandlength_aa4a17c33a06e5cb(arg0, arg1, arg2) {
     const ret = new Uint8Array(getObject(arg0), arg1 >>> 0, arg2 >>> 0);
     return addHeapObject(ret);
 };
 
-export function __wbg_new_09938a7d020f049b(arg0) {
+export function __wbg_new_63b92bc8671ed464(arg0) {
     const ret = new Uint8Array(getObject(arg0));
     return addHeapObject(ret);
 };
 
-export function __wbg_newwithbyteoffsetandlength_ab5b524f83702d8d(arg0, arg1, arg2) {
+export function __wbg_newwithbyteoffsetandlength_4a659d079a1650e0(arg0, arg1, arg2) {
     const ret = new Float32Array(getObject(arg0), arg1 >>> 0, arg2 >>> 0);
     return addHeapObject(ret);
 };
 
-export function __wbg_new_cc28423e56f14cf6(arg0) {
+export function __wbg_new_9efabd6b6d2ce46d(arg0) {
     const ret = new Float32Array(getObject(arg0));
     return addHeapObject(ret);
 };
 
-export function __wbg_newwithlength_f1d9913dea66bfa9(arg0) {
+export function __wbg_newwithlength_1e8b839a06de01c5(arg0) {
     const ret = new Float32Array(arg0 >>> 0);
     return addHeapObject(ret);
 };

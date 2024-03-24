@@ -24,12 +24,12 @@ export enum AudioCodec {
 export class Audio {
   free(): void;
 /**
-* @param {number} codec
+* @param {AudioCodec} codec
 * @param {number} _codec_rate
 * @param {number} input_rate
 * @param {number} output_rate
 */
-  constructor(codec: number, _codec_rate: number, input_rate: number, output_rate: number);
+  constructor(codec: AudioCodec, _codec_rate: number, input_rate: number, output_rate: number);
 /**
 * @param {Uint8Array} input
 * @returns {Float32Array}
@@ -48,7 +48,7 @@ export class Audio {
 */
   set_an(an: boolean): void;
 /**
-* @param {Function | undefined} f
+* @param {Function | undefined} [f]
 */
   set_decoded_callback(f?: Function): void;
 }
