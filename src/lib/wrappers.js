@@ -1,5 +1,7 @@
 import * as fzstd from 'fzstd'
 import { Audio, AudioCodec, ZstdStreamDecoder, firdes_kaiser_lowpass, __wbg_set_wasm } from '../modules/phantomsdrdsp_bg.js'
+import { RollingAvg } from 'efficient-rolling-stats'
+import Deque from 'double-ended-queue'
 
 // https://stackoverflow.com/questions/47879864/how-can-i-check-if-a-browser-supports-webassembly
 const hasWasm = (() => {
@@ -108,4 +110,85 @@ export default async function initWrappers() {
   }
   __wbg_set_wasm(wasm);
   wasm.__wbindgen_start();
+}
+
+export class RollingVariance {
+  constructor(windowSize) {
+    this.avg = RollingAvg(windowSize);
+    this.avgsq = RollingAvg(windowSize);
+    this.windowSize = windowSize;
+    this.average = 0;
+ }
+
+ add(value) {
+    let avg = this.avg(value);
+    let avgsq = this.avgsq(value * value);
+    this.average = avg;
+    return (avgsq - avg * avg) * this.windowSize / (this.windowSize - 1);
+ }
+
+ getavg() {
+    return this.average;
+ }
+}
+
+export class JitterBuffer {
+  constructor(timePerPacket, verbose = false) {
+    this.buffer = new Deque(1000 / timePerPacket);
+    this.timePerPacket = timePerPacket;
+    this.lastReceived = performance.now();
+    this.verbose = verbose;
+
+    // Average over 10 seconds
+    this.variance = new RollingVariance(10000 / timePerPacket);
+  }
+
+  get length() {
+    return this.buffer.length;
+  }
+
+  add(packet, delay) {
+    let queueLength = this.buffer.unshift(packet);
+    let variance = this.variance.add(delay);
+    let packetAmount = Math.max(2, Math.ceil(variance * 20 / this.timePerPacket));
+    for (let i = packetAmount; i < queueLength; i++) {
+      this.buffer.pop();
+    }
+    this.var = variance;
+
+    if (this.verbose) {
+      console.log('JitterBuffer: delay', delay, 'variance', variance, 'packetAmount', packetAmount, 'queueLength', queueLength)
+    }
+  }
+
+  unshift(packet) {
+    let delay = performance.now() - this.lastReceived;
+    this.lastReceived = performance.now();
+
+    this.add(packet, delay);
+  }
+
+  unshiftMultiple(packets) {
+    let delay = (performance.now() - this.lastReceived) / packets.length;
+    this.lastReceived = performance.now();
+
+    for (let packet of packets) {
+      this.add(packet, delay);
+    }
+  }
+
+  pop() {
+    return this.buffer.pop();
+  }
+
+  clear() {
+    this.buffer.clear();
+  }
+
+  getvar() {
+    return this.var;
+  }
+  getavg() {
+    return this.variance.getavg();
+  }
 }

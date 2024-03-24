@@ -1,6 +1,6 @@
 
 import getColormap, { computeColormapArray } from './lib/colormaps.js'
-import { createWaterfallDecoder } from './lib/wrappers.js'
+import { JitterBuffer, createWaterfallDecoder } from './lib/wrappers.js'
 import Deque from 'double-ended-queue'
 import 'core-js/actual/set-immediate'
 import 'core-js/actual/clear-immediate'
@@ -12,7 +12,7 @@ export default class SpectrumWaterfall {
     this.spectrum = false
     this.waterfall = false
 
-    this.waterfallQueue = new Deque(10)
+    this.waterfallQueue = new JitterBuffer(100)
     this.drawnWaterfallQueue = new Deque(4096)
     this.lagTime = 0
     this.spectrumAlpha = 0.5
@@ -130,7 +130,8 @@ export default class SpectrumWaterfall {
 
       const skipNum = Math.max(1, Math.floor((this.sps / this.fftSize) / 10.0) * 2)
       const waterfallFPS = (this.sps / this.fftSize) / (skipNum / 2)
-
+      this.waterfallQueue = new JitterBuffer(1000 / waterfallFPS)
+      
       console.log('Waterfall FPS: ' + waterfallFPS)
 
       this.waterfallDrawInterval = setInterval(() => {
@@ -163,19 +164,15 @@ export default class SpectrumWaterfall {
   }
   
   enqueueSpectrogram (array) {
-    // Do not decode or draw if not requested
+    
+    // Decode and extract header
+    this.waterfallQueue.unshiftMultiple(this.waterfallDecoder.decode(array))
+
+    // Do draw if not requested
     if (!this.waterfall && !this.spectrum) {
       this.waterfallQueue.clear()
       return
     }
-    if (this.waterfallQueue.length > 5) {
-      this.waterfallQueue.clear()
-    }
-
-    // Decode and extract header
-    this.waterfallDecoder.decode(array).forEach((element) => {
-      this.waterfallQueue.unshift(element)
-    })
   }
 
   transformValue (x) {
