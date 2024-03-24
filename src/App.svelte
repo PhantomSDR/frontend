@@ -20,6 +20,7 @@
   let waterfallCanvas
   let spectrumCanvas
   let graduationCanvas
+  let tempCanvas
 
   let frequencyInputComponent
 
@@ -255,7 +256,7 @@
     audio.setMute(mute)
   }
   function handleVolumeChange () {
-    audio.setGain(Math.pow(10, (volume - 50) / 50 + 2.8))
+    audio.setGain(Math.pow(10, (volume - 50) / 50 + 1.8))
   }
   function handleSquelchChange () {
     audio.setSquelch(squelchEnable)
@@ -283,8 +284,8 @@
   let updateInterval
   let lastUpdated = 0
   function updateTick () {
-    power = audio.getPowerDb()
-    powerPeak = accumulator(power)
+    power = audio.getPowerDb() / 150 * 100 
+    powerPeak = accumulator(power) / 150 * 100 
 
     if (events.getLastModified() > lastUpdated) {
       const myRange = audio.getAudioRange()
@@ -360,7 +361,8 @@
     waterfall.initCanvas({
       canvasElem: waterfallCanvas,
       spectrumCanvasElem: spectrumCanvas,
-      graduationCanvasElem: graduationCanvas
+      graduationCanvasElem: graduationCanvas,
+      tempCanvasElem: tempCanvas
     })
   
     await backendPromise;
@@ -482,7 +484,9 @@
         on:panmove={handleWaterfallPanMove}
         on:wheel={handleWaterfallWheel}
         on:mousedown={handleWaterfallMouseDown}
-      width="1024" height="4096"></canvas></div>
+      width="1024" height="4096"></canvas>
+        <canvas class="hidden" bind:this={tempCanvas} width="1024" height="1024"></canvas>
+      </div>
       <!--<div class="fixed border border-black text-xs px-1 hidden 
       transition-opacity duration-100 bg-blue-800 text-gray-400
         peer-hover:block {frequencyHintActive ? 'opacity-1' : 'opacity-0'}"
@@ -549,7 +553,7 @@
               </label>
               <span class="w-1/6 text-white text-xs text-center m-auto">{squelch}db</span>
               <div class="px-0 w-2/3 align-middle">
-                <input type="range" bind:value={squelch} on:mousemove={handleSquelchMove} min="-100" max="0" step="0.1" class="w-full align-middle appearance-none h-1 bg-gray-400 rounded outline-none slider-thumb">
+                <input type="range" bind:value={squelch} on:mousemove={handleSquelchMove} min="-150" max="0" step="0.1" class="w-full align-middle appearance-none h-1 bg-gray-400 rounded outline-none slider-thumb">
               </div>
             </div>
             <div class="flex">

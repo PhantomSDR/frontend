@@ -53,7 +53,7 @@ export default class SpectrumWaterfall {
     this.spectrumCanvasElem.addEventListener('mousemove', this.spectrumMouseMove.bind(this))
     this.spectrumCanvasElem.addEventListener('mouseleave', this.spectrumMouseLeave.bind(this))
 
-    this.tempCanvasElem = document.createElement('canvas')
+    this.tempCanvasElem = settings.tempCanvasElem
     this.tempCtx = this.tempCanvasElem.getContext('2d')
     this.tempCanvasElem.width = this.canvasWidth
     this.tempCanvasElem.height = 200
@@ -103,23 +103,27 @@ export default class SpectrumWaterfall {
       this.totalBandwidth = settings.total_bandwidth
       this.overlap = settings.overlap
 
-      this.canvasElem.width = settings.waterfall_size
+      let canvasWidth = this.canvasElem.parentElement.clientWidth * 2
 
-      this.canvasScale = settings.waterfall_size / 1024
+      this.canvasElem.width = canvasWidth
+
+      this.canvasScale = canvasWidth / 1024
 
       // Aspect ratio is 1024 to 128px
-      this.spectrumCanvasElem.width = settings.waterfall_size
-      this.spectrumCanvasElem.height = settings.waterfall_size / 1024 * 128
+      this.spectrumCanvasElem.width = canvasWidth
+      this.spectrumCanvasElem.height = canvasWidth / 1024 * 128
 
-      this.tempCanvasElem.width = settings.waterfall_size
+      this.tempCanvasElem.width = canvasWidth
 
       // Aspect ratio is 1024 to 20px
-      this.graduationCanvasElem.width = settings.waterfall_size
-      this.graduationCanvasElem.height = settings.waterfall_size / 1024 * 20
+      this.graduationCanvasElem.width = canvasWidth
+      this.graduationCanvasElem.height = canvasWidth / 1024 * 20
 
       this.canvasElem.height = this.canvasElem.parentElement.clientHeight * 2
       this.canvasWidth = this.canvasElem.width
       this.canvasHeight = this.canvasElem.height
+
+      this.tempCanvasElem.width =   settings.waterfall_size
 
       this.ctx.fillStyle = this.backgroundColor
       this.ctx.fillRect(0, 0, this.canvasElem.width, this.canvasElem.height)
@@ -131,7 +135,7 @@ export default class SpectrumWaterfall {
 
       this.waterfallDrawInterval = setInterval(() => {
         requestAnimationFrame(this.drawSpectrogram.bind(this))
-      }, 1000 / waterfallFPS)
+      }, Math.floor(1000 / waterfallFPS))
 
       this.waterfallL = 0
       this.waterfallR = this.waterfallMaxSize
@@ -163,9 +167,8 @@ export default class SpectrumWaterfall {
       this.waterfallQueue.clear()
       return
     }
-    if (this.waterfallQueue.length > 20) {
-      this.waterfallQueue.pop()
-      this.waterfallQueue.pop()
+    if (this.waterfallQueue.length > 5) {
+      this.waterfallQueue.clear()
     }
 
     // Decode and extract header
@@ -212,12 +215,13 @@ export default class SpectrumWaterfall {
   }
 
   drawSpectrogram () {
+    
     if (this.waterfallQueue.length === 0) {
       return
     }
 
     const [waterfallArray, curL, curR] = this.waterfallQueue.pop()
-
+    
     const [arr, pxL, pxR] = this.calculateOffsets(waterfallArray, curL, curR)
     
     if (this.waterfall) {
@@ -244,7 +248,7 @@ export default class SpectrumWaterfall {
       const [waterfallArray, curL, curR] = toDraw[i]
 
       const [arr, pxL, pxR] = this.calculateOffsets(waterfallArray, curL, curR)
-
+      
       this.drawWaterfallLine(arr, pxL, pxR, toDrawLine)
       if (i + 1 < toDraw.length) {
         this.updateImmediate = setImmediate(() => drawLine(i + 1))
@@ -269,17 +273,17 @@ export default class SpectrumWaterfall {
       bmparr[i * 4 + 2] = this.colormap[arr[i]][1]
       bmparr[i * 4 + 3] = this.colormap[arr[i]][0]
     }
-
-    this.ctx.putImageData(colorarr, 0, 0)
+  
+    this.tempCtx.putImageData(colorarr, 0, 0)
     // Resize the line into the correct width
-    this.ctx.drawImage(this.canvasElem, 0, 0, arr.length, 1, pxL, line, pxR - pxL, 1)
+    this.ctx.drawImage(this.tempCanvasElem, 0, 0, arr.length, 1, pxL, line, pxR - pxL, 1)
   }
 
   drawWaterfall (arr, pxL, pxR, curL, curR) {
     this.drawWaterfallLine(arr, pxL, pxR, this.curLine)
-
+    
     // Shift the spectrogram down by 1 pixel
-    this.canvasElem.style.transform = `translate3d(0, -${((this.curLine + 1) / this.canvasHeight * 100).toFixed(8)}%, 0)`
+    this.canvasElem.style.transform = `translate3d(0, -${((this.curLine + 1) / this.canvasHeight * 100)}%, 0) rotate(.0001deg)`
 
     // Once we have reached the start of the canvas, reset to the middle
     if (this.curLine === 0) {
