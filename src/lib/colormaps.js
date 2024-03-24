@@ -260,6 +260,8 @@ const turboColormap = [
   [0.47960, 0.01583, 0.01055]
 ]
 
+
+
 // https://github.com/csete/gqrx/blob/master/src/qtgui/plotter.cpp
 const gqrxData = []
 for (let i = 0; i < 256; i++) {
@@ -285,14 +287,43 @@ for (let i = 0; i < 256; i++) {
   gqrxData[i] = gqrxData[i].map(x => x / 255)
 }
 
+// Replica of WebSDR Colormap to replicate the cool look of these colors!
+const twenteData = [];
+for (let i = 0; i < 256; i++) {
+  if (i < 105) {
+    // level 0: black to dark blue (#0d0086)
+    const r = 13 * i / 105;
+    const g = 0;
+    const b = 134 * i / 105;
+    twenteData.push([r, g, b]);
+  }  else if (i < 192) {
+    // level 2: dark purple (#6200b0) to yellow (#fffec3)
+    const r = 98 + (255 - 98) * (i - 96) / 63;
+    const g = 0 + (254 - 0) * (i - 96) / 63;
+    const b = 176 + (195 - 176) * (i - 96) / 63;
+    twenteData.push([r, g, b]);
+  } else {
+    // level 3: yellow (#fffec3)
+    const r = 255;
+    const g = 254;
+    const b = 195;
+    twenteData.push([r, g, b]);
+  }
+  // Normalize RGB values to the range 0-1
+  twenteData[i] = twenteData[i].map(x => x / 255);
+}
+
+
 const definedColormaps = {
   turbo: turboColormap,
-  gqrx: gqrxData
+  gqrx: gqrxData,
+  twente: twenteData
 }
 
 export const availableColormaps = [
-  'turbo', 'gqrx', ...Object.keys(colorScale)
+  'turbo', 'gqrx', 'twente', ...Object.keys(colorScale)
 ]
+
 
 export function computeColormapArray (colormap) {
   return colormap.map((rgb) => {
