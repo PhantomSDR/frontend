@@ -382,6 +382,7 @@
     }
 
     frequencyInputComponent.setFrequency(FFTOffsetToFrequency(audio.getAudioRange()[1]))
+    frequencyInputComponent.updateFrequencyLimits(audio.baseFreq, audio.baseFreq + audio.totalBandwidth)
     demodulation = audio.settings.defaults.modulation
   
     const updateParameters = (linkParameters) => {
