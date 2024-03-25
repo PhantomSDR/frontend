@@ -41,8 +41,8 @@
     updateDisplay();
   }
 
-  function handleFrequencyDoubleclick(e) {
-    frequencyTextboxInput.classList.remove("hidden");
+  function handleFrequencyClick(e) {
+    frequencyTextboxInput.hidden = false;
     frequencyScrollInput.hidden = true;
   }
 
@@ -83,7 +83,7 @@
     );
 
     if (frequencyTextboxInput) {
-      frequencyTextboxInput.classList.add("hidden");
+      frequencyTextboxInput.hidden = true;
       frequencyScrollInput.hidden = false;
     }
 
@@ -144,7 +144,7 @@
 </script>
 
 <div class="w-full md-2 items-center bg-black pt-1">
-  <div class="hidden m-0 p-0" bind:this={frequencyTextboxInput}>
+  <div class="m-0 p-0" hidden bind:this={frequencyTextboxInput}>
     <input
       type="number"
       class="text-3xl font-mono text-white outline-none bg-transparent text-center appearance-none p-0 m-0 inline-block"
@@ -155,7 +155,7 @@
   </div>
   <div class="font-mono" style="font-size: 0"
     bind:this={frequencyScrollInput}
-    on:click={handleFrequencyDoubleclick}
+    on:click={handleFrequencyClick}
     >
     {#each frequencyDigits as { element, multiplier, separator, value }, i}
       <span

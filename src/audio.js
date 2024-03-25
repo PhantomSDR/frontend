@@ -76,7 +76,7 @@ export default class SpectrumAudio {
     }
 
     this.audioStartTime = this.audioCtx.currentTime
-    this.playTime = this.audioCtx.currentTime + 0.1
+    this.playTime = this.audioCtx.currentTime + 0.25
     this.playStartTime = this.audioCtx.currentTime
 
     this.decoder = createDecoder(settings.audio_compression, this.audioMaxSps, this.trueAudioSps, this.audioOutputSps)
@@ -314,7 +314,7 @@ export default class SpectrumAudio {
     const curPlayTime = this.playPCM(pcmArray, this.playTime, this.audioOutputSps, 1)
 
     // buffering issues
-    let buffer = this.audioQueue.getavg() + this.audioQueue.getvar() * 2
+    let buffer = Math.max(250, this.audioQueue.getavg() + this.audioQueue.getvar() * 2)
     if (this.playTime - this.audioCtx.currentTime <= curPlayTime) {
       this.playTime = this.audioCtx.currentTime + buffer / 1000
       console.log('underrun')
