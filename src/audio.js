@@ -1,4 +1,4 @@
-import { JitterBuffer, createDecoder, firdes_kaiser_lowpass } from './lib/wrappers'
+import { createDecoder, firdes_kaiser_lowpass } from './lib/wrappers'
 
 import createWindow from 'live-moving-average'
 
@@ -12,7 +12,7 @@ export default class SpectrumAudio {
 
     this.playMovingAverage = []
     this.playSampleLength = 1
-    this.audioQueue = new JitterBuffer(100)
+    this.audioQueue = []
 
     this.demodulation = 'USB'
 
@@ -26,9 +26,6 @@ export default class SpectrumAudio {
     // for chrome
     const userGestureFunc = () => {
       if (this.audioCtx && this.audioCtx.state !== 'running') {
-        this.audioStartTime = this.audioCtx.currentTime
-        this.playTime = this.audioCtx.currentTime + 0.5
-        this.playStartTime = this.audioCtx.currentTime
         this.audioCtx.resume()
       }
       document.documentElement.removeEventListener('mousedown', userGestureFunc)
@@ -79,7 +76,7 @@ export default class SpectrumAudio {
     }
 
     this.audioStartTime = this.audioCtx.currentTime
-    this.playTime = this.audioCtx.currentTime + 0.5
+    this.playTime = this.audioCtx.currentTime + 0.1
     this.playStartTime = this.audioCtx.currentTime
 
     this.decoder = createDecoder(settings.audio_compression, this.audioMaxSps, this.trueAudioSps, this.audioOutputSps)
@@ -171,10 +168,6 @@ export default class SpectrumAudio {
 
     this.audioSocket.onmessage = this.socketMessage.bind(this)
 
-    const skipNum = Math.max(250, Math.floor((this.sps / this.fftSize) / 10.0) * 2)
-    const waterfallFPS = (this.sps / this.fftSize) / (skipNum / 2)
-    this.audioQueue = new JitterBuffer(1000 / waterfallFPS)
-
     this.initAudio(settings)
 
     console.log('Audio Samplerate: ', this.trueAudioSps)
@@ -215,9 +208,47 @@ export default class SpectrumAudio {
     if (pcmArray.length === 0) {
       return
     }
-    
-    this.audioQueue.unshift(pcmArray)
-    pcmArray = this.audioQueue.pop()
+
+    this.intervals = this.intervals || createWindow(10000, 0)
+    this.lens = this.lens || createWindow(10000, 0)
+    this.lastReceived = this.lastReceived || 0
+    // For checking sample rate
+    if (this.lastReceived === 0) {
+      this.lastReceived = performance.now()
+    } else {
+      const curReceived = performance.now()
+      const delay = curReceived - this.lastReceived
+      this.intervals.push(delay)
+      this.lastReceived = curReceived
+      this.lens.push(pcmArray.length)
+
+      let updatedv = true
+
+      if (this.mode === 0) {
+        if (Math.abs(delay - this.n1) > Math.abs(this.v) * 2 + 800) {
+          this.var = 0
+          this.mode = 1
+        }
+      } else {
+        this.var = this.var / 2 + Math.abs((2 * delay - this.n1 - this.n2) / 8)
+        if (this.var <= 63) {
+          this.mode = 0
+          updatedv = false
+        }
+      }
+
+      if (updatedv) {
+        if (this.mode === 0) {
+          this.d = 0.125 * delay + 0.875 * this.d
+        } else {
+          this.d = this.d + delay - this.n1
+        }
+        this.v = 0.125 * Math.abs(delay - this.d) + 0.875 * this.v
+      }
+
+      this.n2 = this.n1
+      this.n1 = delay
+    }
 
     this.pcmArray = pcmArray
     if (this.signalDecoder) {
@@ -317,13 +348,11 @@ export default class SpectrumAudio {
     const curPlayTime = this.playPCM(pcmArray, this.playTime, this.audioOutputSps, 1)
 
     // buffering issues
-    let buffer = Math.max(250 + curPlayTime, this.audioQueue.getavg() + this.audioQueue.getvar() * 2)
-    let buffer_overrun = Math.max(500 + curPlayTime, this.audioQueue.getavg() + this.audioQueue.getvar() * 4)
     if (this.playTime - this.audioCtx.currentTime <= curPlayTime) {
-      this.playTime = this.audioCtx.currentTime + buffer / 1000
+      this.playTime = this.audioCtx.currentTime + (this.d + 4 * this.v) / 1000
       console.log('underrun')
-    } else if (this.playTime - this.audioCtx.currentTime > buffer_overrun / 1000) {
-      this.playTime = this.audioCtx.currentTime + buffer / 1000
+    } else if (this.playTime - this.audioCtx.currentTime > 2) {
+      this.playTime = this.audioCtx.currentTime + (this.d + 4 * this.v) / 1000
       console.log('overrun')
     }
   }
