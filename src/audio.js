@@ -314,7 +314,7 @@ export default class SpectrumAudio {
     const curPlayTime = this.playPCM(pcmArray, this.playTime, this.audioOutputSps, 1)
 
     // buffering issues
-    let buffer = this.audioQueue.getavg() + this.audioQueue.getvar() * 4
+    let buffer = this.audioQueue.getavg() + this.audioQueue.getvar() * 2
     if (this.playTime - this.audioCtx.currentTime <= curPlayTime) {
       this.playTime = this.audioCtx.currentTime + buffer / 1000
       console.log('underrun')
