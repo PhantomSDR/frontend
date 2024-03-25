@@ -26,6 +26,9 @@ export default class SpectrumAudio {
     // for chrome
     const userGestureFunc = () => {
       if (this.audioCtx && this.audioCtx.state !== 'running') {
+        this.audioStartTime = this.audioCtx.currentTime
+        this.playTime = this.audioCtx.currentTime + 0.5
+        this.playStartTime = this.audioCtx.currentTime
         this.audioCtx.resume()
       }
       document.documentElement.removeEventListener('mousedown', userGestureFunc)
@@ -76,7 +79,7 @@ export default class SpectrumAudio {
     }
 
     this.audioStartTime = this.audioCtx.currentTime
-    this.playTime = this.audioCtx.currentTime + 0.25
+    this.playTime = this.audioCtx.currentTime + 0.5
     this.playStartTime = this.audioCtx.currentTime
 
     this.decoder = createDecoder(settings.audio_compression, this.audioMaxSps, this.trueAudioSps, this.audioOutputSps)
@@ -168,7 +171,7 @@ export default class SpectrumAudio {
 
     this.audioSocket.onmessage = this.socketMessage.bind(this)
 
-    const skipNum = Math.max(1, Math.floor((this.sps / this.fftSize) / 10.0) * 2)
+    const skipNum = Math.max(250, Math.floor((this.sps / this.fftSize) / 10.0) * 2)
     const waterfallFPS = (this.sps / this.fftSize) / (skipNum / 2)
     this.audioQueue = new JitterBuffer(1000 / waterfallFPS)
 
@@ -314,11 +317,12 @@ export default class SpectrumAudio {
     const curPlayTime = this.playPCM(pcmArray, this.playTime, this.audioOutputSps, 1)
 
     // buffering issues
-    let buffer = Math.max(250, this.audioQueue.getavg() + this.audioQueue.getvar() * 2)
+    let buffer = Math.max(250 + curPlayTime, this.audioQueue.getavg() + this.audioQueue.getvar() * 2)
+    let buffer_overrun = Math.max(500 + curPlayTime, this.audioQueue.getavg() + this.audioQueue.getvar() * 4)
     if (this.playTime - this.audioCtx.currentTime <= curPlayTime) {
       this.playTime = this.audioCtx.currentTime + buffer / 1000
       console.log('underrun')
-    } else if (this.playTime - this.audioCtx.currentTime > buffer * 2 / 1000) {
+    } else if (this.playTime - this.audioCtx.currentTime > buffer_overrun / 1000) {
       this.playTime = this.audioCtx.currentTime + buffer / 1000
       console.log('overrun')
     }

@@ -136,7 +136,7 @@ export class JitterBuffer {
   constructor(timePerPacket, verbose = false) {
     this.buffer = new Deque(1000 / timePerPacket);
     this.timePerPacket = timePerPacket;
-    this.lastReceived = -1;
+    this.lastReceived = 0;
     this.verbose = verbose;
 
     // Average over 10 seconds
@@ -162,10 +162,11 @@ export class JitterBuffer {
   }
 
   unshift(packet) {
-    if (this.lastReceived === -1) {
-      this.lastReceived = performance.now() - 100;
-    }
     let delay = performance.now() - this.lastReceived;
+    if (delay > 2000) {
+      // If we receive a packet after a long delay, assume not a network event
+      delay = 100;
+    }
     this.lastReceived = performance.now();
 
     this.add(packet, delay);
