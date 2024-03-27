@@ -5,6 +5,7 @@
   const dispatch = createEventDispatcher();
 
   let frequency = 0;
+  let frequencyBFO = 0;
   const frequencyUnit = "MHz";
   let frequencyDecimals;
   let frequencyDisplay;
@@ -26,6 +27,11 @@
   };
   let frequencyDigits = [];
 
+  function changeFrequency(f) {
+    frequency = f;
+    dispatch("change", f + frequencyBFO);
+  }
+
   function handleFrequencyChange(e) {
     if (!isNumber(frequencyDisplay)) {
       updateDisplay();
@@ -35,15 +41,14 @@
     enteredFrequency *= Math.pow(10, frequencyDecimals);
 
     if (checkFrequency(enteredFrequency)) {
-      frequency = enteredFrequency;
-      dispatch("change", enteredFrequency);
+      changeFrequency(enteredFrequency);
     }
     updateDisplay();
   }
 
   function handleFrequencyClick(e) {
-    frequencyTextboxInput.hidden = false;
-    frequencyScrollInput.hidden = true;
+    // frequencyTextboxInput.hidden = false;
+    // frequencyScrollInput.hidden = true;
   }
 
   function handleFrequencyMousewheel(e, multiplier) {
@@ -51,9 +56,13 @@
     // update the value in the html
     let updatedFrequency = frequency + delta * multiplier;
 
+    // If it the kHz position, zero out the Hz position
+    if (multiplier === 1000) {
+      updatedFrequency -= (updatedFrequency % 1000);
+    }
+    
     if (checkFrequency(updatedFrequency)) {
-      frequency = updatedFrequency;
-      dispatch("change", updatedFrequency);
+      changeFrequency(updatedFrequency);
     }
   }
 
@@ -68,11 +77,21 @@
       let digit = parseInt(key);
       let currentDigit = Math.floor(frequency / multiplier) % 10;
       updatedFrequency += (digit - currentDigit) * multiplier;
+
+      // Focus the next element
+      let nextIndex = frequencyDigits.findIndex((d) => d.multiplier === multiplier) + 1;
+      if (nextIndex < frequencyDigits.length) {
+        frequencyDigits[nextIndex].element.focus();
+      }
+
+      // If it the kHz position, zero out the Hz position
+      if (multiplier === 1000) {
+        updatedFrequency -= (updatedFrequency % 1000);
+      }
     }
 
     if (checkFrequency(updatedFrequency)) {
-      frequency = updatedFrequency;
-      dispatch("change", updatedFrequency);
+      changeFrequency(updatedFrequency);
     }
   }
 
@@ -83,8 +102,8 @@
     );
 
     if (frequencyTextboxInput) {
-      frequencyTextboxInput.hidden = true;
-      frequencyScrollInput.hidden = false;
+      // frequencyTextboxInput.hidden = true;
+      // frequencyScrollInput.hidden = false;
     }
 
     let isLeadingZero = true;
@@ -116,10 +135,19 @@
       frequency = f;
     }
   }
-
+  
   export function getFrequency() {
     return frequency;
   }
+  
+  export function setBFO(f) {
+    frequencyBFO = f;
+  }
+
+  export function getBFO() {
+    return frequencyBFO;
+  }
+
 
   export function updateFrequencyLimits(lo, hi) {
     frequencyLow = lo;
@@ -153,25 +181,30 @@
     />
     <span class="text-white font-mono p-1 m-1 text-3xl">{frequencyUnit}</span>
   </div>
-  <div class="font-mono" style="font-size: 0"
+  <div class="font-mono m-0 p-0" style="font-size: 0"
     bind:this={frequencyScrollInput}
-    on:click={handleFrequencyClick}
     >
     {#each frequencyDigits as { element, multiplier, separator, value }, i}
-      <span
-        class="text-white text-3xl whitespace-pre p-1 m-0 outline-none hover:bg-gray-800"
+      <button type="button"
+        class="text-white text-3xl whitespace-pre px-1 m-0 outline-none cursor-crosshair focus:bg-gray-800"
         bind:this={element}
         tabindex="-1"
         on:wheel={(e) => handleFrequencyMousewheel(e, multiplier)}
         on:keydown={(e) => handleFrequencyDigitKeyPress(e, multiplier)}
         on:mouseenter={() => element.focus()}
-        data-multiplier={multiplier}>{value}</span
+        data-multiplier={multiplier}
+        >{value}</button
       >
       {#if separator}
         <span class="text-white text-xl p-0 m-0">.</span>
       {/if}
     {/each}
-    <span class="text-white text-3xl p-1 m-1">Hz</span>
+    <span class="text-white text-3xl px-1 mx-1">Hz</span>
+  </div>
+  <div class="transform -translate-y-full m-0 p-0">
+    {#if frequencyBFO}
+      <span class="absolute transform -translate-y-full font-mono m-0 p-1 text-white text-sm left-3/4">BFO: {Math.abs(frequencyBFO)}Hz</span>
+    {/if}
   </div>
 </div>
 

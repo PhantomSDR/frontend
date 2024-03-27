@@ -106,8 +106,8 @@
   const demodulationDefaults = {
     USB: { type: 'USB', offsets: [0, 3000] },
     LSB: { type: 'LSB', offsets: [3000, 0] },
-    'CW-U': { type: 'USB', offsets: [-500, 1000] },
-    'CW-L': { type: 'LSB', offsets: [1000, -500] },
+    'CW-U': { type: 'USB', offsets: [-500, 1000], bfo: -700 },
+    'CW-L': { type: 'LSB', offsets: [1000, -500], bfo: 700 },
     AM: { type: 'AM', offsets: [5000, 5000] },
     FM: { type: 'FM', offsets: [5000, 5000] },
     WBFM: { type: 'FM', offsets: [95000, 95000] }
@@ -133,9 +133,15 @@
       }
       audio.setAudioDemodulation(demodulationDefault.type)
     }
+    let prevBFO = frequencyInputComponent.getBFO()
+    let newBFO = demodulationDefault.bfo || 0
     let [l, m, r] = audio.getAudioRange().map(FFTOffsetToFrequency)
+    m = m + newBFO - prevBFO
     l = m - demodulationDefault.offsets[0]
     r = m + demodulationDefault.offsets[1]
+
+    frequencyInputComponent.setBFO(newBFO)
+    frequencyInputComponent.setFrequency()
 
     const audioParameters = roundAudioOffsets([l, m, r].map(frequencyToFFTOffset))
     audio.setAudioRange(...audioParameters)
