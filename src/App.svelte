@@ -151,12 +151,17 @@
 
   // When user drags or changes the passband
   function handlePassbandChange (passband) {
-    const [l, m, r] = passband.detail.map(waterfallOffsetToFrequency)
+    let [l, m, r] = passband.detail.map(waterfallOffsetToFrequency)
+    let bfo = frequencyInputComponent.getBFO()
+    l += bfo
+    m += bfo
+    r += bfo
     bandwidth = ((r - l) / 1000).toFixed(2)
     frequencyInputComponent.setFrequency(m)
     const audioParameters = roundAudioOffsets([l, m, r].map(frequencyToFFTOffset))
     audio.setAudioRange(...audioParameters)
     updateLink()
+    updatePassband()
   }
 
   // Entering new frequency into the textbox
