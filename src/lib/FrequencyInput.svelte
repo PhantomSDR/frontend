@@ -93,6 +93,32 @@
         updatedFrequency -= (updatedFrequency % 1000);
       }
     }
+    if (checkFrequency(updatedFrequency)) {
+      changeFrequency(updatedFrequency);
+    }
+  }
+  // For mobile only
+  function handleFrequencyDigitKeyUp(e, multiplier) {
+    if(e.target.value.length == 1) {
+      return;
+    }
+    let currentDigit = Math.floor(frequency / multiplier) % 10;
+    // Remove the currentDigit to get the input digit
+    let digit = parseInt(e.target.value.replace(currentDigit, ''));
+    let updatedFrequency = frequency + (digit - currentDigit) * multiplier;
+
+    // Focus the next element
+    let nextIndex = frequencyDigits.findIndex((d) => d.multiplier === multiplier) + 1;
+    if (nextIndex < frequencyDigits.length) {
+      frequencyDigits[nextIndex].element.focus();
+    } else {
+      e.target.blur();
+    }
+    
+    // If it the kHz position, zero out the Hz position
+    if (multiplier === 1000) {
+      updatedFrequency -= (updatedFrequency % 1000);
+    }
 
     if (checkFrequency(updatedFrequency)) {
       changeFrequency(updatedFrequency);
@@ -226,7 +252,8 @@
         tabindex="-1"
         on:wheel={(e) => handleFrequencyMousewheel(e, multiplier)}
         on:keydown={(e) => handleFrequencyDigitKeyPress(e, multiplier)}
-        on:mouseenter={() => element.focus()}
+        on:keyup={(e) => handleFrequencyDigitKeyUp(e, multiplier)}
+        on:mouseenter={(e) => e.target.focus()}
         use:pan
         on:panstart={(e) => handleFrequencyDigitPanStart(e, multiplier)}
         on:panmove={(e) => handleFrequencyDigitPanMove(e, multiplier)}

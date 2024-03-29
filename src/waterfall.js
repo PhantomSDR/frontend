@@ -90,6 +90,28 @@ export default class SpectrumWaterfall {
     this.waterfallSocket.close()
   }
 
+  setCanvasWidth() {
+    let canvasWidth = this.canvasElem.parentElement.clientWidth * window.devicePixelRatio
+
+    this.canvasElem.width = canvasWidth
+
+    this.canvasScale = canvasWidth / 1024
+
+    // Aspect ratio is 1024 to 128px
+    this.spectrumCanvasElem.width = canvasWidth
+    this.spectrumCanvasElem.height = canvasWidth / 1024 * 128
+
+    this.tempCanvasElem.width = canvasWidth
+
+    // Aspect ratio is 1024 to 20px
+    this.graduationCanvasElem.width = canvasWidth
+    this.graduationCanvasElem.height = canvasWidth / 1024 * 20
+
+    this.canvasElem.height = this.canvasElem.parentElement.clientHeight * 2
+    this.canvasWidth = this.canvasElem.width
+    this.canvasHeight = this.canvasElem.height
+  }
+
   socketMessageInitial (event) {
     // First message gives the parameters in json
     if (!(event.data instanceof ArrayBuffer)) {
@@ -104,26 +126,7 @@ export default class SpectrumWaterfall {
       this.totalBandwidth = settings.total_bandwidth
       this.overlap = settings.overlap
 
-      let canvasWidth = this.canvasElem.parentElement.clientWidth * window.devicePixelRatio
-
-      this.canvasElem.width = canvasWidth
-
-      this.canvasScale = canvasWidth / 1024
-
-      // Aspect ratio is 1024 to 128px
-      this.spectrumCanvasElem.width = canvasWidth
-      this.spectrumCanvasElem.height = canvasWidth / 1024 * 128
-
-      this.tempCanvasElem.width = canvasWidth
-
-      // Aspect ratio is 1024 to 20px
-      this.graduationCanvasElem.width = canvasWidth
-      this.graduationCanvasElem.height = canvasWidth / 1024 * 20
-
-      this.canvasElem.height = this.canvasElem.parentElement.clientHeight * 2
-      this.canvasWidth = this.canvasElem.width
-      this.canvasHeight = this.canvasElem.height
-
+      this.setCanvasWidth()
       this.tempCanvasElem.width = settings.waterfall_size * 2
 
       this.ctx.fillStyle = this.backgroundColor
@@ -283,7 +286,7 @@ export default class SpectrumWaterfall {
     
     // Shift the spectrogram down by 1 pixel
     //let shift = (this.curLine + 1 - this.canvasHeight / 4);
-    this.canvasElem.style.transform = `translate3d(0, -${(this.curLine + 1) / window.devicePixelRatio}px, 0)`
+    this.canvasElem.style.transform = `translate3d(0, -${this.curLine / window.devicePixelRatio + 1}px, 0)`
 
     // Once we have reached the start of the canvas, reset to the middle
     if (this.curLine === 0) {
