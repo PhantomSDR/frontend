@@ -2,6 +2,7 @@
   import isNumber from "is-number";
   import { createEventDispatcher } from "svelte";
   import { audio } from "./backend";
+    import { pan } from "./hammeractions";
   const dispatch = createEventDispatcher();
 
   let frequency = 0;
@@ -67,6 +68,7 @@
   }
 
   function handleFrequencyDigitKeyPress(e, multiplier) {
+    e.preventDefault()
     let key = e.key
     let updatedFrequency = frequency;
     if (key === "ArrowUp") {
@@ -82,6 +84,8 @@
       let nextIndex = frequencyDigits.findIndex((d) => d.multiplier === multiplier) + 1;
       if (nextIndex < frequencyDigits.length) {
         frequencyDigits[nextIndex].element.focus();
+      } else {
+        e.target.blur();
       }
 
       // If it the kHz position, zero out the Hz position
@@ -95,6 +99,36 @@
     }
   }
 
+  let digitCumulativePan = 0;
+  let digitLastDeltaY = 0;
+  function handleFrequencyDigitPanStart(e, multiplier) {
+    e.target.classList.add("bg-gray-800");
+    digitCumulativePan = 0;
+    digitLastDeltaY = e.detail.deltaY;
+  }
+  function handleFrequencyDigitPanMove(e, multiplier) {
+    const digitElementHeight = e.target.getBoundingClientRect().height;
+    const difference = e.detail.deltaY - digitLastDeltaY;
+    digitLastDeltaY = e.detail.deltaY;
+    //alert(difference + ' ' + digitElementHeight);
+    digitCumulativePan -= difference;
+    if (digitCumulativePan > digitElementHeight) {
+      let updatedFrequency = frequency + multiplier;
+      if (checkFrequency(updatedFrequency)) {
+        changeFrequency(updatedFrequency);
+      }
+      digitCumulativePan -= digitElementHeight;
+    } else if (-digitCumulativePan > digitElementHeight) {
+      let updatedFrequency = frequency - multiplier;
+      if (checkFrequency(updatedFrequency)) {
+        changeFrequency(updatedFrequency);
+      }
+      digitCumulativePan += digitElementHeight;
+    }
+  }
+  function handleFrequencyDigitPanEnd(e, multiplier) {
+    e.target.classList.remove("bg-gray-800");
+  }
 
   function updateDisplay(f) {
     frequencyDisplay = (frequency / Math.pow(10, frequencyDecimals)).toFixed(
@@ -185,16 +219,23 @@
     bind:this={frequencyScrollInput}
     >
     {#each frequencyDigits as { element, multiplier, separator, value }, i}
-      <button type="button"
-        class="text-white text-3xl whitespace-pre px-1 m-0 outline-none cursor-crosshair focus:bg-gray-800"
+      <input type="number"
+        class="text-white text-3xl text-center whitespace-pre px-1 m-0 outline-none bg-transparent caret-transparent cursor-crosshair focus:bg-gray-800"
+        style="width: 1em"
         bind:this={element}
         tabindex="-1"
         on:wheel={(e) => handleFrequencyMousewheel(e, multiplier)}
         on:keydown={(e) => handleFrequencyDigitKeyPress(e, multiplier)}
         on:mouseenter={() => element.focus()}
+        use:pan
+        on:panstart={(e) => handleFrequencyDigitPanStart(e, multiplier)}
+        on:panmove={(e) => handleFrequencyDigitPanMove(e, multiplier)}
+        on:panend={(e) => handleFrequencyDigitPanEnd(e, multiplier)}
         data-multiplier={multiplier}
-        >{value}</button
-      >
+        value={value}
+        max="9"
+        min="0"
+        />
       {#if separator}
         <span class="text-white text-xl p-0 m-0">.</span>
       {/if}

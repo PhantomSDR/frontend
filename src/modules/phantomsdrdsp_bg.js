@@ -52,28 +52,6 @@ function getStringFromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
-/**
-*/
-export function greet() {
-    wasm.greet();
-}
-
-/**
-*/
-export function main() {
-    wasm.main();
-}
-
-/**
-* @param {number} cutoff
-* @param {number} transition_bw
-* @param {number} max_ripple
-* @returns {Float32Array}
-*/
-export function firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple) {
-    const ret = wasm.firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple);
-    return takeObject(ret);
-}
 
 let WASM_VECTOR_LEN = 0;
 
@@ -115,6 +93,28 @@ function getArrayJsValueFromWasm0(ptr, len) {
         result.push(takeObject(slice[i]));
     }
     return result;
+}
+/**
+*/
+export function greet() {
+    wasm.greet();
+}
+
+/**
+*/
+export function main() {
+    wasm.main();
+}
+
+/**
+* @param {number} cutoff
+* @param {number} transition_bw
+* @param {number} max_ripple
+* @returns {Float32Array}
+*/
+export function firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple) {
+    const ret = wasm.firdes_kaiser_lowpass(cutoff, transition_bw, max_ripple);
+    return takeObject(ret);
 }
 
 const lTextEncoder = typeof TextEncoder === 'undefined' ? (0, module.require)('util').TextEncoder : TextEncoder;
@@ -339,13 +339,13 @@ export function __wbindgen_object_drop_ref(arg0) {
     takeObject(arg0);
 };
 
-export function __wbg_alert_379870a8a3d45260(arg0, arg1) {
-    alert(getStringFromWasm0(arg0, arg1));
-};
-
 export function __wbindgen_object_clone_ref(arg0) {
     const ret = getObject(arg0);
     return addHeapObject(ret);
+};
+
+export function __wbg_alert_379870a8a3d45260(arg0, arg1) {
+    alert(getStringFromWasm0(arg0, arg1));
 };
 
 export function __wbg_new_abda76e883ba8a5f() {

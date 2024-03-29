@@ -49,9 +49,11 @@
   // Handling dragging the waterfall left or right
   let waterfallDragging = false
   let waterfallDragTotal = 0
+  let waterfallBeginX = 0
   function handleWaterfallMouseDown (e) {
     waterfallDragTotal = 0
     waterfallDragging = true
+    waterfallBeginX = e.clientX
   }
   function handleWindowMouseMove (e) {
     if (waterfallDragging) {
@@ -453,6 +455,8 @@
     evt.scaleAmount = scale
     waterfall.canvasWheel(evt)
     updatePassband()
+    // Prevent mouseup event from firing
+    waterfallDragTotal += 2
   }
   // Pan = Mousewheel = waterfall dragging
   function handleWaterfallPanMove (e) {
@@ -509,7 +513,7 @@
         <Logger bind:this={logger} capacity={1000}></Logger>
       </div>
     </div>
-    <div class="w-full h-screen overflow-y-scroll sm:w-1/2 md:w-1/3 lg:w-1/4 sm:transition-all sm:ease-linear sm:duration-100">
+    <div class="w-full h-1/3 sm:h-screen overflow-y-scroll sm:w-1/2 md:w-1/3 lg:w-1/4 sm:transition-all sm:ease-linear sm:duration-100">
       <div class="tab">
         <div class="m-2">
         </div>
