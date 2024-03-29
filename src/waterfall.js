@@ -124,7 +124,7 @@ export default class SpectrumWaterfall {
       this.canvasWidth = this.canvasElem.width
       this.canvasHeight = this.canvasElem.height
 
-      this.tempCanvasElem.width =   settings.waterfall_size
+      this.tempCanvasElem.width = settings.waterfall_size * 2
 
       this.ctx.fillStyle = this.backgroundColor
       this.ctx.fillRect(0, 0, this.canvasElem.width, this.canvasElem.height)
