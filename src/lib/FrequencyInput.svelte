@@ -253,7 +253,7 @@
         on:wheel={(e) => handleFrequencyMousewheel(e, multiplier)}
         on:keydown={(e) => handleFrequencyDigitKeyPress(e, multiplier)}
         on:keyup={(e) => handleFrequencyDigitKeyUp(e, multiplier)}
-        on:mouseenter={(e) => e.target.focus()}
+        on:mousemove={(e) => e.target.focus()}
         use:pan
         on:panstart={(e) => handleFrequencyDigitPanStart(e, multiplier)}
         on:panmove={(e) => handleFrequencyDigitPanMove(e, multiplier)}

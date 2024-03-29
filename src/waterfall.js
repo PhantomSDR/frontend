@@ -56,16 +56,34 @@ export default class SpectrumWaterfall {
 
     this.tempCanvasElem = settings.tempCanvasElem
     this.tempCtx = this.tempCanvasElem.getContext('2d')
-    this.tempCanvasElem.width = this.canvasWidth
     this.tempCanvasElem.height = 200
 
     this.waterfall = true
 
-    /*window.addEventListener('resize', () => {
-      this.canvasElem.height = window.innerHeight * 2
-      this.canvasHeight = this.canvasElem.height
+    let resizeTimeout;
+    let resizeCallback = () => {
+      // Create a new canvas and copy over new canvas
+      let resizeCanvas = document.createElement('canvas')
+      resizeCanvas.width = this.canvasElem.width
+      resizeCanvas.height = this.canvasElem.height
+      let resizeCtx = resizeCanvas.getContext('2d')
+      resizeCtx.drawImage(this.canvasElem, 0, 0)
+
+      this.setCanvasWidth()
+      this.curLine = Math.ceil(this.curLine * this.canvasElem.height / resizeCanvas.height)
+      // Copy resizeCanvas to new canvas with scaling
+      this.ctx.drawImage(resizeCanvas, 0, 0, resizeCanvas.width, resizeCanvas.height, 0, 0, this.canvasElem.width, this.canvasElem.height)
+      this.updateGraduation()
       this.redrawWaterfall()
-    })*/
+      resizeTimeout = undefined
+    }
+    window.addEventListener('resize', () => {
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout)
+      }
+      resizeCallback()
+      resizeTimeout = setTimeout(resizeCallback, 250)
+    })
   }
 
   async init () {
@@ -100,8 +118,6 @@ export default class SpectrumWaterfall {
     // Aspect ratio is 1024 to 128px
     this.spectrumCanvasElem.width = canvasWidth
     this.spectrumCanvasElem.height = canvasWidth / 1024 * 128
-
-    this.tempCanvasElem.width = canvasWidth
 
     // Aspect ratio is 1024 to 20px
     this.graduationCanvasElem.width = canvasWidth
@@ -141,7 +157,7 @@ export default class SpectrumWaterfall {
       this.waterfallDrawInterval = setInterval(() => {
         //requestAnimationFrame(this.drawSpectrogram.bind(this))
         this.drawSpectrogram()
-      }, Math.floor(1000 / waterfallFPS))
+      }, 1000 / waterfallFPS)
 
       this.waterfallL = 0
       this.waterfallR = this.waterfallMaxSize

@@ -365,7 +365,7 @@
     }*/
   }
 
-  const backendPromise = init()
+  let backendPromise;
   onMount(async () => {
     // Disable all the input to prevent clicking
     [...document.getElementsByTagName('button'), ...document.getElementsByTagName('input')].forEach(element => {
@@ -376,8 +376,9 @@
       spectrumCanvasElem: spectrumCanvas,
       graduationCanvasElem: graduationCanvas,
       tempCanvasElem: tempCanvas
-    })
-  
+    });
+
+    backendPromise = init();
     await backendPromise;
 
     // Enable after connection established
