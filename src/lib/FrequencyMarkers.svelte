@@ -66,7 +66,7 @@
       finalizeList()
     })
 </script>
-<div on:click|self on:wheel|self class="w-full h-4 bg-black relative" bind:this={markerDiv}>
+<div on:click|self on:wheel|self class="w-full h-4 bg-black relative" bind:this={markerDiv} role="button">
     {#each frequencyMarkers as frequencyMarker (frequencyMarker.frequency)}
     <div class="h-4 absolute p-0 group" style="left: {frequencyMarker.left * 100}%"
         on:click={() => dispatch('markerclick', frequencyMarker)}>

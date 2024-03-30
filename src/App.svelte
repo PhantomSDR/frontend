@@ -624,7 +624,7 @@
         </div>
         <div class="m-2">
           <div class="flex flex-wrap items-center content-center justify-center my-1">
-            <CheckButton name="Spectrum Analyzer" bind:checked={spectrumDisplay} on:change={handleSpectrumChange}></CheckButton>
+            <CheckButton name="Spectrum" bind:checked={spectrumDisplay} on:change={handleSpectrumChange}></CheckButton>
             <CheckButton name="Waterfall" bind:checked={waterfallDisplay} on:change={handleWaterfallChange}></CheckButton>
           </div>
           <div class="flex flex-wrap items-center justify-center w-full" aria-label="Bandwidth controls">

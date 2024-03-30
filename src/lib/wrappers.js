@@ -152,7 +152,10 @@ export class JitterBuffer {
     let variance = this.variance.add(delay);
     let packetAmount = Math.ceil(variance * 2 / this.timePerPacket);
     // Clamp to 2, 10
-    packetAmount = Math.min(10, Math.max(2, packetAmount));
+    packetAmount = 2;
+    if (queueLength > packetAmount) {
+      console.log('pop some off', packetAmount, queueLength)
+    }
     for (let i = packetAmount; i < queueLength; i++) {
       this.buffer.pop();
     }

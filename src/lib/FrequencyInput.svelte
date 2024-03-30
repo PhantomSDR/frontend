@@ -53,6 +53,7 @@
   }
 
   function handleFrequencyMousewheel(e, multiplier) {
+    e.preventDefault();
     let delta = e.deltaY > 0 ? -1 : 1;
     // update the value in the html
     let updatedFrequency = frequency + delta * multiplier;
@@ -67,16 +68,8 @@
     }
   }
 
-  function handleFrequencyDigitKeyPress(e, multiplier) {
-    e.preventDefault()
-    let key = e.key
-    let updatedFrequency = frequency;
-    if (key === "ArrowUp") {
-      updatedFrequency = frequency + multiplier;
-    } else if (key === "ArrowDown") {
-      updatedFrequency = frequency - multiplier;
-    } else if (key >= "0" && key <= "9") {
-      let digit = parseInt(key);
+  function changeDigit(e, digit, multiplier) {
+      let updatedFrequency = frequency;
       let currentDigit = Math.floor(frequency / multiplier) % 10;
       updatedFrequency += (digit - currentDigit) * multiplier;
 
@@ -92,6 +85,20 @@
       if (multiplier === 1000) {
         updatedFrequency -= (updatedFrequency % 1000);
       }
+      return updatedFrequency
+  }
+
+  function handleFrequencyDigitKeyPress(e, multiplier) {
+    e.preventDefault()
+    let key = e.key
+    let updatedFrequency = frequency;
+    if (key === "ArrowUp") {
+      updatedFrequency = frequency + multiplier;
+    } else if (key === "ArrowDown") {
+      updatedFrequency = frequency - multiplier;
+    } else if (key >= "0" && key <= "9") {
+      let digit = parseInt(key);
+      updatedFrequency = changeDigit(e, digit, multiplier);
     }
     if (checkFrequency(updatedFrequency)) {
       changeFrequency(updatedFrequency);
@@ -105,20 +112,7 @@
     let currentDigit = Math.floor(frequency / multiplier) % 10;
     // Remove the currentDigit to get the input digit
     let digit = parseInt(e.target.value.replace(currentDigit, ''));
-    let updatedFrequency = frequency + (digit - currentDigit) * multiplier;
-
-    // Focus the next element
-    let nextIndex = frequencyDigits.findIndex((d) => d.multiplier === multiplier) + 1;
-    if (nextIndex < frequencyDigits.length) {
-      frequencyDigits[nextIndex].element.focus();
-    } else {
-      e.target.blur();
-    }
-    
-    // If it the kHz position, zero out the Hz position
-    if (multiplier === 1000) {
-      updatedFrequency -= (updatedFrequency % 1000);
-    }
+    let updatedFrequency = changeDigit(e, digit, multiplier);
 
     if (checkFrequency(updatedFrequency)) {
       changeFrequency(updatedFrequency);
@@ -161,6 +155,7 @@
       frequencyDecimals,
     );
 
+
     if (frequencyTextboxInput) {
       // frequencyTextboxInput.hidden = true;
       // frequencyScrollInput.hidden = false;
@@ -175,11 +170,10 @@
       if (isLeadingZero && digit == 0) {
         frequencyDigits[i].value = " ";
       } else {
-        frequencyDigits[i].value = digit;
+        frequencyDigits[i].value = Math.round(digit);
       }
     }
-    frequencyDigits = frequencyDigits;
-    
+    frequencyDigits = frequencyDigits;  
   }
 
   $: frequencyDecimals = frequencyUnitMappings[frequencyUnit];
