@@ -196,8 +196,8 @@ export default class SpectrumWaterfall {
       return
     }
 
-    while (this.waterfallQueue.length > 2) {
-      this.waterfallQueue.pop()
+    while (this.waterfallQueue.length > 10) {
+      this.drawSpectrogram()
     }
   }
 
@@ -486,6 +486,10 @@ export default class SpectrumWaterfall {
       this.ctx.fillStyle = this.backgroundColor
       this.ctx.fillRect(0, 0, newCanvasX1, this.canvasHeight)
       this.ctx.fillRect(newCanvasX2, 0, this.canvasWidth - newCanvasX2, this.canvasHeight)
+    }
+    // For responsiveness, drain the entire waterfall queue
+    while (this.waterfallQueue.length > 0) {
+      this.drawSpectrogram()
     }
     this.updateGraduation()
     this.resetRedrawTimeout(500)
