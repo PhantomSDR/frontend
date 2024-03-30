@@ -1,6 +1,7 @@
 import { createDecoder, firdes_kaiser_lowpass } from './lib/wrappers'
 
 import createWindow from 'live-moving-average'
+import { decode as cbor_decode } from 'cbor-x';
 
 import { MinimalAudioContext, ConvolverNode, IIRFilterNode, GainNode, AudioBuffer, AudioBufferSourceNode } from 'standardized-audio-context'
 
@@ -27,6 +28,11 @@ export default class SpectrumAudio {
     const userGestureFunc = () => {
       if (this.audioCtx && this.audioCtx.state !== 'running') {
         this.audioCtx.resume()
+      }
+      // Remove the element with id startaudio from the DOM
+      const startaudio = document.getElementById('startaudio')
+      if (startaudio) {
+        startaudio.remove()
       }
       document.documentElement.removeEventListener('mousedown', userGestureFunc)
     }
@@ -175,15 +181,8 @@ export default class SpectrumAudio {
 
   socketMessage(event) {
     if (event.data instanceof ArrayBuffer) {
-      /*
-          struct {
-            uint64_t frame_num;
-            uint32_t l, r;
-            double m, pwr;
-          } header;
-      */
-      const header = new DataView(event.data)
-      const receivedPower = header.getFloat64(8 + 4 * 2 + 8, true)
+      const packet = cbor_decode(new Uint8Array(event.data))
+      const receivedPower = packet.pwr
       this.power = 0.5 * this.power + 0.5 * receivedPower || 1
       const dBpower = 20 * Math.log10(Math.sqrt(this.power) / 2)
       this.dBPower = dBpower
@@ -193,8 +192,7 @@ export default class SpectrumAudio {
         this.squelchMute = false
       }
 
-      const packet = new Uint8Array(event.data.slice(4 * 8))
-      this.decode(packet)
+      this.decode(packet.data)
     }
   }
 

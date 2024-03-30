@@ -1,6 +1,7 @@
 import * as fzstd from 'fzstd'
 import { Audio, AudioCodec, ZstdStreamDecoder, firdes_kaiser_lowpass, __wbg_set_wasm } from '../modules/phantomsdrdsp_bg.js'
 import { RollingAvg } from 'efficient-rolling-stats'
+import { decode as cbor_decode } from 'cbor-x';
 import Deque from 'double-ended-queue'
 
 // https://stackoverflow.com/questions/47879864/how-can-i-check-if-a-browser-supports-webassembly
@@ -73,10 +74,9 @@ export { firdes_kaiser_lowpass }
 
 
 function decodePacket(packet) {
-  let packetview = new DataView(packet.buffer);
-  let l = packetview.getUint32(8, true);
-  let r = packetview.getUint32(12, true);
-  return [new Int8Array(packet.buffer, 16), l, r]
+  packet = cbor_decode(packet)
+  packet.data = new Int8Array(packet.data)
+  return packet
 }
 
 export class ZstdWaterfallDecoder {
@@ -150,7 +150,9 @@ export class JitterBuffer {
   add(packet, delay) {
     let queueLength = this.buffer.unshift(packet);
     let variance = this.variance.add(delay);
-    let packetAmount = Math.max(2, Math.ceil(variance * 10 / this.timePerPacket));
+    let packetAmount = Math.ceil(variance * 2 / this.timePerPacket);
+    // Clamp to 2, 10
+    packetAmount = Math.min(10, Math.max(2, packetAmount));
     for (let i = packetAmount; i < queueLength; i++) {
       this.buffer.pop();
     }

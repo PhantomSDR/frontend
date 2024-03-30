@@ -425,7 +425,7 @@
     handleVolumeChange()
     updateLink()
 
-    updateInterval = setInterval(updateTick, 200)
+    updateInterval = setInterval(() => requestAnimationFrame(updateTick), 200)
 
     // For debugging
     window['spectrumAudio'] = audio
@@ -519,7 +519,10 @@
         <div class="m-2">
         </div>
       </div>
-      <div class="tab">
+      <div class="tab relative">
+        <div class="flex absolute w-full h-full z-20 text-4xl bg-gray-800/75" id="startaudio">
+          <button class="basic-button m-auto">Start Audio</button>
+        </div>
         <div class="bg-gray-500 text-left pl-2">
           <label for="tab-multi-one">Audio</label>
         </div>
@@ -574,27 +577,27 @@
               </div>
             </div>
             <div class="flex">
-              <span class="w-1/6 text-white text-xs text-center relative basic-button">
+              <span class="w-1/6 text-white text-xs text-center relative basic-button overflow-y-hidden">
                 <span
-                  class="bg-green-800 w-full absolute left-0 top-0 z-10 transition-all"
-                  style="top: {-power}%; height: {power + 100}%"
+                  class="bg-green-800 w-full h-full absolute left-0 bottom-0 z-10 transition-all"
+                  style="transform: translate3d(0, {-power}%, 0)"
                 ></span>
                 <span
-                  class="bg-red-800 w-full absolute left-0 top-0 z-0 transition-all"
-                  style="top: {-powerPeak}%; height: {powerPeak + 100}%"
+                  class="bg-red-800 w-full h-full absolute left-0 bottom-0 z-0 transition-all"
+                  style="transform: translate3d(0, {-powerPeak}%, 0)"
                 ></span>
                 <span class="relative z-20">Pwr</span>
               </span>
               <span class="w-1/6 text-white text-xs text-center m-auto">{power.toFixed(1)}db</span>
               <div class="px-0 w-2/3 align-middle flex">
-                <div class="bg-gray-300 h-1 w-full m-auto rounded-full relative">
+                <div class="bg-gray-300 h-1 w-full m-auto rounded-full relative overflow-x-hidden">
                   <span
-                    class="bg-green-500 h-1 absolute left-0 top-0 rounded-full z-10 transition-all"
-                    style="width: {power + 100}%"
+                    class="bg-green-500 h-1 w-full absolute left-0 top-0 rounded-full z-10 transition-all"
+                    style="transform: translate3d({power}%, 0, 0)"
                   ></span>
                   <span
-                    class="bg-red-500 h-1 absolute left-0 top-0 rounded-full z-0 transition-all"
-                    style="width: {powerPeak + 100}%"
+                    class="bg-red-500 h-1 w-full absolute left-0 top-0 rounded-full z-0 transition-all"
+                    style="transform: translate3d({powerPeak}%, 0, 0)"
                   ></span>
                 </div>
               </div>

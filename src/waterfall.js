@@ -123,7 +123,7 @@ export default class SpectrumWaterfall {
     this.graduationCanvasElem.width = canvasWidth
     this.graduationCanvasElem.height = canvasWidth / 1024 * 20
 
-    this.canvasElem.height = this.canvasElem.parentElement.clientHeight * 2
+    this.canvasElem.height = window.outerHeight * window.devicePixelRatio * 2
     this.canvasWidth = this.canvasElem.width
     this.canvasHeight = this.canvasElem.height
   }
@@ -238,7 +238,7 @@ export default class SpectrumWaterfall {
       return
     }
 
-    const [waterfallArray, curL, curR] = this.waterfallQueue.pop()
+    const {data: waterfallArray, l: curL, r: curR} = this.waterfallQueue.pop()
     
     const [arr, pxL, pxR] = this.calculateOffsets(waterfallArray, curL, curR)
     
