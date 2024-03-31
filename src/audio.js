@@ -274,14 +274,16 @@ export default class SpectrumAudio {
   }
 
   setAudioRange(audioL, audioM, audioR) {
-    this.audioL = audioL
+    this.audioL = Math.floor(audioL)
     this.audioM = audioM
-    this.audioR = audioR
+    this.audioR = Math.ceil(audioR)
+    this.actualL = audioL
+    this.actualR = audioR
     this.updateAudioParams()
   }
 
   getAudioRange() {
-    return [this.audioL, this.audioM, this.audioR]
+    return [this.actualL, this.audioM, this.actualR]
   }
 
   setAudioOptions(options) {

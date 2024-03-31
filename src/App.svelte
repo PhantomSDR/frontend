@@ -145,7 +145,7 @@
     frequencyInputComponent.setBFO(newBFO)
     frequencyInputComponent.setFrequency()
 
-    const audioParameters = roundAudioOffsets([l, m, r].map(frequencyToFFTOffset))
+    const audioParameters = [l, m, r].map(frequencyToFFTOffset)
     audio.setAudioRange(...audioParameters)
     updatePassband()
     updateLink()
@@ -160,7 +160,7 @@
     r += bfo
     bandwidth = ((r - l) / 1000).toFixed(2)
     frequencyInputComponent.setFrequency(m)
-    const audioParameters = roundAudioOffsets([l, m, r].map(frequencyToFFTOffset))
+    const audioParameters = [l, m, r].map(frequencyToFFTOffset)
     audio.setAudioRange(...audioParameters)
     updateLink()
     updatePassband()
@@ -196,7 +196,6 @@
       waterfallR = Math.floor(newMid + limits)
       waterfall.setWaterfallRange(waterfallL, waterfallR)
     }
-    audioParameters = roundAudioOffsets(audioParameters)
     audio.setAudioRange(...audioParameters)
     updatePassband()
     updateLink()
@@ -259,7 +258,6 @@
       l = Math.max(m - getMaximumBandwidth() / 2, Math.min(m, l - bandwidthoffset / 2))
     }
     let audioParameters = [l, m, r].map(frequencyToFFTOffset)
-    audioParameters = roundAudioOffsets(audioParameters)
     audio.setAudioRange(...audioParameters)
     updatePassband()
   }
