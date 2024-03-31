@@ -1,9 +1,9 @@
 <script>
     import { beforeUpdate, afterUpdate } from 'svelte'
-    import Deque from 'double-ended-queue'
+    import Denque from 'denque'
 
     export let capacity = 1000
-    let log = new Deque(capacity)
+    let log = new Denque(capacity)
 
     export function addLine (text) {
       log.push(text)

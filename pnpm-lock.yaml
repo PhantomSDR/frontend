@@ -41,9 +41,9 @@ devDependencies:
   cssnano:
     specifier: ^6.1.2
     version: 6.1.2(postcss@8.4.38)
-  double-ended-queue:
-    specifier: 2.1.0-0
-    version: 2.1.0-0
+  denque:
+    specifier: ^2.1.0
+    version: 2.1.0
   efficient-rolling-stats:
     specifier: ^0.1.1
     version: 0.1.1
@@ -2731,6 +2731,11 @@ packages:
       object-keys: 1.1.1
     dev: true
 
+  /denque@2.1.0:
+    resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
+    engines: {node: '>=0.10'}
+    dev: true
+
   /dequal@2.0.3:
     resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
     engines: {node: '>=6'}
@@ -2795,10 +2800,6 @@ packages:
       dom-serializer: 2.0.0
       domelementtype: 2.3.0
       domhandler: 5.0.3
-    dev: true
-
-  /double-ended-queue@2.1.0-0:
-    resolution: {integrity: sha512-+BNfZ+deCo8hMNpDqDnvT+c0XpJ5cUa6mqYq89bho2Ifze4URTqRkcwR399hWoTrTkbZ/XJYDgP6rc7pRgffEQ==}
     dev: true
 
   /eastasianwidth@0.2.0:

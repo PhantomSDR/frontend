@@ -1,7 +1,7 @@
 
 import getColormap, { computeColormapArray } from './lib/colormaps.js'
 import { JitterBuffer, createWaterfallDecoder } from './lib/wrappers.js'
-import Deque from 'double-ended-queue'
+import Denque from 'denque'
 import 'core-js/actual/set-immediate'
 import 'core-js/actual/clear-immediate'
 
@@ -12,8 +12,8 @@ export default class SpectrumWaterfall {
     this.spectrum = false
     this.waterfall = false
 
-    this.waterfallQueue = new Deque(10)
-    this.drawnWaterfallQueue = new Deque(4096)
+    this.waterfallQueue = new Denque(10)
+    this.drawnWaterfallQueue = new Denque(4096)
     this.lagTime = 0
     this.spectrumAlpha = 0.5
     this.spectrumFiltered = [[-1, -1], [0]]

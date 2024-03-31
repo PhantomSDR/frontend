@@ -20,7 +20,7 @@
     "copy-to-clipboard": "^3.3.3",
     "core-js": "^3.36.1",
     "cssnano": "^6.1.2",
-    "double-ended-queue": "2.1.0-0",
+    "denque": "^2.1.0",
     "efficient-rolling-stats": "^0.1.1",
     "esbuild": "^0.20.2",
     "eslint": "^8.57.0",

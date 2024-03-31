@@ -2,7 +2,7 @@ import * as fzstd from 'fzstd'
 import { Audio, AudioCodec, ZstdStreamDecoder, firdes_kaiser_lowpass, __wbg_set_wasm } from '../modules/phantomsdrdsp_bg.js'
 import { RollingAvg } from 'efficient-rolling-stats'
 import { decode as cbor_decode } from 'cbor-x';
-import Deque from 'double-ended-queue'
+import Denque from 'denque'
 
 // https://stackoverflow.com/questions/47879864/how-can-i-check-if-a-browser-supports-webassembly
 const hasWasm = (() => {
@@ -134,7 +134,7 @@ export class RollingVariance {
 
 export class JitterBuffer {
   constructor(timePerPacket, verbose = false) {
-    this.buffer = new Deque(1000 / timePerPacket);
+    this.buffer = new Denque(1000 / timePerPacket);
     this.timePerPacket = timePerPacket;
     this.lastReceived = 0;
     this.verbose = verbose;
