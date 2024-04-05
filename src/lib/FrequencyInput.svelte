@@ -129,21 +129,24 @@
   function handleFrequencyDigitPanMove(e, multiplier) {
     const digitElementHeight = e.target.getBoundingClientRect().height;
     const difference = e.detail.deltaY - digitLastDeltaY;
+    let updatedFrequency = frequency;
     digitLastDeltaY = e.detail.deltaY;
     //alert(difference + ' ' + digitElementHeight);
     digitCumulativePan -= difference;
     if (digitCumulativePan > digitElementHeight) {
-      let updatedFrequency = frequency + multiplier;
-      if (checkFrequency(updatedFrequency)) {
-        changeFrequency(updatedFrequency);
-      }
+      updatedFrequency += multiplier;
       digitCumulativePan -= digitElementHeight;
     } else if (-digitCumulativePan > digitElementHeight) {
-      let updatedFrequency = frequency - multiplier;
+      updatedFrequency -= multiplier;
+      digitCumulativePan += digitElementHeight;
+    }
+    if (updatedFrequency != frequency) {
+      if (multiplier === 1000) {
+        updatedFrequency -= (updatedFrequency % 1000);
+      }
       if (checkFrequency(updatedFrequency)) {
         changeFrequency(updatedFrequency);
       }
-      digitCumulativePan += digitElementHeight;
     }
   }
   function handleFrequencyDigitPanEnd(e, multiplier) {
