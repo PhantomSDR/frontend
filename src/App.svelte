@@ -243,7 +243,14 @@
 
   // Bandwidth offset controls
   let bandwithoffsets = [
-    '-10000', '-1000', '-100', '-10', '+10', '+100', '+1000', '+10000'
+    {text: '-10k', value: -10000},
+    {text: '-1k', value: -1000},
+    {text: '-100', value: -100},
+    {text: '-10', value: -10},
+    {text: '+10', value: +10},
+    {text: '+100', value: +100},
+    {text: '+1k', value: 1000},
+    {text: '+10k', value: 10000},
   ]
   function handleBandwidthOffsetClick (e, bandwidthoffset) {
     bandwidthoffset = parseFloat(bandwidthoffset)
@@ -260,6 +267,26 @@
     let audioParameters = [l, m, r].map(frequencyToFFTOffset)
     audio.setAudioRange(...audioParameters)
     updatePassband()
+  }
+
+
+  let frequencyoffsets = [
+    {text: '-100k', value: -100000},
+    {text: '-10k', value: -10000},
+    {text: '-1k', value: -1000, bold: true},
+    {text: '-100', value: -100},
+    {text: '-10', value: -10},
+    {text: '+10', value: +10},
+    {text: '+100', value: +100},
+    {text: '+1k', value: 1000, bold: true},
+    {text: '+10k', value: 10000},
+    {text: '+100k', value: 100000},
+  ]
+  function handleFrequencyOffsetClick(e, value) {
+    let frequency = frequencyInputComponent.getFrequency()
+    frequency += value
+    frequencyInputComponent.setFrequency(frequency)
+    handleFrequencyChange({ detail: frequency })
   }
 
   // Toggle buttons and slides for audio
@@ -388,8 +415,8 @@
     if (audio.trueAudioSps > 170000) {
       demodulators.push('WBFM')
       demodulators = demodulators
-      bandwithoffsets.unshift('-100000')
-      bandwithoffsets.push('+100000')
+      bandwithoffsets.unshift({text: '-100k', value: -100000})
+      bandwithoffsets.push({text: '+100k', value: 100000})
       bandwithoffsets = bandwithoffsets
     }
 
@@ -540,9 +567,18 @@
           </div>
           <p class="text-white text-sm">Bandwidth: {bandwidth}kHz</p>
           <div class="flex items-center justify-center pb-1 scale-90 sm:scale-75 md:scale-[0.70]">
-            {#each bandwithoffsets as bandwidthoffset (bandwidthoffset)}
-              <button class="click-button w-1/4" on:click={(e) => handleBandwidthOffsetClick(e, bandwidthoffset)}
-                  data-expand="{bandwidthoffset}">{bandwidthoffset}</button>
+            {#each bandwithoffsets as {text, value}}
+              <button class="click-button w-1/4" on:click={(e) => handleBandwidthOffsetClick(e, value)}
+                  data-expand="{value}">{text}</button>
+            {/each}
+          </div>
+          <p class="text-white text-sm">Frequency Offset</p>
+          <div class="flex items-center justify-center pb-1 scale-90 sm:scale-75 md:scale-[0.70]">
+            {#each frequencyoffsets as {text, value, bold}}
+              <button
+                class="click-button w-1/4"
+                on:click={(e) => handleFrequencyOffsetClick(e, value)}
+                data-expand="{value}">{text}</button>
             {/each}
           </div>
           <div>
@@ -734,7 +770,7 @@
   }
 
   .click-button {
-    @apply text-blue-500 border border-blue-500 font-bold uppercase transition-all duration-100 text-center text-xs px-2 py-1;
+    @apply text-blue-500 border box-border border-blue-500 font-bold uppercase transition-all duration-100 text-center text-xs px-2 py-1;
   }
   .click-button:active {
     @apply bg-blue-600 text-white;
